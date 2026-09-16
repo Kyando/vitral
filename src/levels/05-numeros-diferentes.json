@@ -1,7 +1,7 @@
 {
   "id": "numeros-diferentes",
   "title": "Números Diferentes",
-  "subtitle": "Agora o ≠ vale para os números.",
+  "subtitle": "Agora são os números que não se repetem.",
   "intro": [
     "values-unique"
   ],

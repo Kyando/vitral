@@ -1,7 +1,7 @@
 {
   "id": "soma",
   "title": "A Soma",
-  "subtitle": "O dado com ? é um número qualquer.",
+  "subtitle": "Dado vazio com =N: os números somam N.",
   "intro": [
     "sum"
   ],

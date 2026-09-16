@@ -503,18 +503,11 @@ button {
   background-image: repeating-linear-gradient(-45deg, transparent 0 10px, rgb(255 255 255 / 0.14) 10px 14px);
 }
 
-/* Carved number: the cell asks for that value */
+/* Shaded pips, as on a Sagrada window: the cell asks for that number */
 .cell-req {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: calc(var(--cell) * 0.5);
-  line-height: 1;
-  color: var(--faint);
-  text-shadow: 0 1.5px 0 var(--panel);
+  inset: 20%;
+  --pip: color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
 .cell.is-hover,

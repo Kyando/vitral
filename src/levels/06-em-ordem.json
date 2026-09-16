@@ -1,7 +1,7 @@
 {
   "id": "em-ordem",
   "title": "Em Ordem",
-  "subtitle": "As barras mostram para onde os números crescem.",
+  "subtitle": "A seta mostra para onde os números vão.",
   "intro": [
     "ascending"
   ],

@@ -1,7 +1,7 @@
 {
   "id": "contando-cores",
   "title": "Contando Cores",
-  "subtitle": "Os círculos nas bordas contam os dados de cada cor.",
+  "subtitle": "O ×N nas bordas conta os dados de cada cor.",
   "intro": [
     "color-count"
   ],

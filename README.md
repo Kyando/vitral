@@ -24,17 +24,18 @@ Every level gives you exactly one die per cell, and rules written as **symbols**
 
 ## A symbol language
 
-Each rule is one composed glyph, read left to right like a kanji built from radicals:
+Everything is a die, as in *Sagrada*: the **fill** is the color (transparent = any color) and the **pips** are the number (no pips = any number). Each rule is one composed glyph, read left to right:
 
 | Part | Meaning |
 |---|---|
-| **Subject** | a circle is a color (split circle: any color), a die is a number (die with **?**: any number) |
-| **Operator** | ≠ all different · = all the same · a slash means none · repetition means exactly N (●● = exactly 2) · bars mean going up/down · +12 means adds up to 12 |
-| **Scope** (modifiers only) | a cross of cells = neighbours · arrows = every row and column |
+| **Subject** | a red tile = red · a die with 5 pips = five · an empty die = any die |
+| **Operator** | ×2 exactly 2 (×0 none) · =12 adds up to 12 · ↗ numbers only go up (↘ down) |
+| **Unique / identical** | three small dice that differ (or match) in color or in number: they carry the attribute themselves |
+| **Scope** (modifiers only) | a cross of cells = neighbours · a grid = every row and column |
 
-Where a glyph sits says where it applies: row rules on the left, column rules on top, **modifiers** above the window (they apply to all of it). Cells can also ask for a color (tinted glass) or a number (carved digit), like the windows of *Sagrada*.
+Where a glyph sits says where it applies: row rules on the left, column rules on top, **modifiers** above the window (they apply to all of it). Cells use the same language as the board of *Sagrada*: tinted glass asks for a color, shaded pips ask for a number.
 
-The same glyph gains a scope to become a modifier: "numbers all different" on a row header, or with arrows for every row and column. Tap any glyph to read it; the help screen has the full glossary.
+Tap any glyph to read it; the help screen has the full glossary.
 
 ## Learning one mechanic at a time
 

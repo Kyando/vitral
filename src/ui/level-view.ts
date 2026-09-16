@@ -3,7 +3,7 @@ import { colOf, rowOf } from '../core/puzzle.ts';
 import { lineCells, ruleScope, type Status } from '../core/rules.ts';
 import type { CellRule } from '../core/types.ts';
 import type { Session } from '../game/session.ts';
-import { dieBody, dieLabel, ruleBadge, ruleGlyph } from './dice.ts';
+import { dieBody, dieLabel, face, ruleBadge, ruleGlyph } from './dice.ts';
 import { h, svg } from './dom.ts';
 import { makeDraggable } from './drag.ts';
 import { burst, flip, replay } from './fx.ts';
@@ -209,7 +209,7 @@ export class LevelView {
         'data-req-color': req?.type === 'cell-color' ? req.color : undefined,
         style: `border-radius: ${RADII[(r * 3 + c) % RADII.length]}`,
       },
-      req?.type === 'cell-value' ? h('span', { class: 'cell-req', 'aria-hidden': 'true' }, String(req.value)) : null,
+      req?.type === 'cell-value' ? face(req.value, 'face cell-req') : null,
       h('span', { class: 'cell-slot' }),
     );
     if (req) {

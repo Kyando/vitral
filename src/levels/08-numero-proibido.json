@@ -1,7 +1,7 @@
 {
   "id": "numero-proibido",
   "title": "Número Proibido",
-  "subtitle": "Um dado riscado não pode aparecer.",
+  "subtitle": "Um número ×0 não pode aparecer.",
   "intro": [
     "value-none"
   ],
