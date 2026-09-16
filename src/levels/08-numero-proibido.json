@@ -1,0 +1,117 @@
+{
+  "id": "numero-proibido",
+  "title": "Número Proibido",
+  "subtitle": "Um dado riscado não pode aparecer.",
+  "intro": [
+    "value-none"
+  ],
+  "rows": 3,
+  "cols": 4,
+  "dice": [
+    "R1",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "G4",
+    "B3",
+    "B3",
+    "B6",
+    "P1",
+    "P2",
+    "P5"
+  ],
+  "rules": [
+    {
+      "line": "row",
+      "index": 0,
+      "type": "values-unique"
+    },
+    {
+      "line": "row",
+      "index": 0,
+      "type": "sum",
+      "value": 13
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "descending"
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "purple",
+      "count": 2
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "value-none",
+      "value": 2
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "color-count",
+      "color": "red",
+      "count": 3
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "descending"
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "ascending"
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "value-none",
+      "value": 4
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "color-count",
+      "color": "blue",
+      "count": 1
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "colors-unique"
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "color-count",
+      "color": "blue",
+      "count": 0
+    },
+    {
+      "type": "cell-value",
+      "row": 2,
+      "col": 2,
+      "value": 5
+    }
+  ],
+  "solution": [
+    "P5",
+    "R1",
+    "B3",
+    "G4",
+    "R4",
+    "B3",
+    "P2",
+    "P1",
+    "R3",
+    "B6",
+    "R5",
+    "R6"
+  ]
+}

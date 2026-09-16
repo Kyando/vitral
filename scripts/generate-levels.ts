@@ -8,8 +8,8 @@
 import { readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describeRule } from '../src/core/describe.ts';
-import { generateLevel, type Generated, type GenerateOptions } from '../src/core/generate.ts';
-import type { LevelDef } from '../src/core/types.ts';
+import { generateLevel, type Generated, type GenerateOptions, type LineRuleType } from '../src/core/generate.ts';
+import type { LevelDef, RuleType } from '../src/core/types.ts';
 
 interface Chapter {
   file: string;
@@ -17,65 +17,128 @@ interface Chapter {
   title: string;
   subtitle: string;
   target: 1 | 2 | 3;
-  options: Omit<GenerateOptions, 'seed'>;
+  /** Mechanics introduced here (shown as "new symbol" cards) and guaranteed to appear. */
+  teaches: RuleType[];
+  options: Omit<GenerateOptions, 'seed' | 'require'>;
 }
+
+// Line rule types grow chapter by chapter: each level may only use what was already taught.
+const L1: LineRuleType[] = ['color-count'];
+const L2: LineRuleType[] = [...L1, 'colors-unique'];
+const L3: LineRuleType[] = [...L2, 'sum'];
+const L4: LineRuleType[] = [...L3, 'values-unique'];
+const L5: LineRuleType[] = [...L4, 'ascending', 'descending'];
+const L6: LineRuleType[] = [...L5, 'colors-same'];
+const L7: LineRuleType[] = [...L6, 'value-none'];
 
 const PLAN: Chapter[] = [
   {
-    file: '01-primeira-janela',
-    id: 'primeira-janela',
-    title: 'Primeira Janela',
-    subtitle: 'Dados vizinhos nunca dividem a mesma cor.',
+    file: '01-vidro-colorido',
+    id: 'vidro-colorido',
+    title: 'Vidro Colorido',
+    subtitle: 'Cada quadro pede uma cor ou um número.',
     target: 1,
-    options: { rows: 3, cols: 3, colors: 3, boardRules: ['adjacent-colors-differ'], lineTypes: ['sum', 'color-count'], redundancy: 4 },
+    teaches: ['cell-color', 'cell-value'],
+    options: { rows: 2, cols: 3, colors: 3, lineTypes: [] },
   },
   {
-    file: '02-rosacea',
-    id: 'rosacea',
-    title: 'Rosácea',
-    subtitle: 'Alguns quadros já pedem uma cor ou um valor.',
+    file: '02-contando-cores',
+    id: 'contando-cores',
+    title: 'Contando Cores',
+    subtitle: 'Os círculos nas bordas contam os dados de cada cor.',
     target: 1,
-    options: { rows: 3, cols: 3, colors: 4, boardRules: ['adjacent-values-differ'], cellRules: 3, redundancy: 3 },
+    teaches: ['color-count'],
+    options: { rows: 3, cols: 3, colors: 3, lineTypes: L1, maxLineRules: 1, redundancy: 2 },
   },
   {
-    file: '03-claraboia',
-    id: 'claraboia',
-    title: 'Claraboia',
-    subtitle: 'Como no Sudoku: nada de valores repetidos na mesma linha ou coluna.',
+    file: '03-cores-diferentes',
+    id: 'cores-diferentes',
+    title: 'Cores Diferentes',
+    subtitle: 'Nenhuma cor se repete onde houver ≠.',
+    target: 1,
+    teaches: ['colors-unique'],
+    options: { rows: 3, cols: 3, colors: 3, lineTypes: L2, maxLineRules: 1, redundancy: 2 },
+  },
+  {
+    file: '04-soma',
+    id: 'soma',
+    title: 'A Soma',
+    subtitle: 'O dado com ? é um número qualquer.',
+    target: 1,
+    teaches: ['sum'],
+    options: { rows: 3, cols: 3, colors: 3, lineTypes: L3, maxLineRules: 1, redundancy: 2 },
+  },
+  {
+    file: '05-numeros-diferentes',
+    id: 'numeros-diferentes',
+    title: 'Números Diferentes',
+    subtitle: 'Agora o ≠ vale para os números.',
     target: 2,
-    options: { rows: 3, cols: 4, colors: 4, boardRules: ['lines-values-unique'], redundancy: 2 },
+    teaches: ['values-unique'],
+    options: { rows: 3, cols: 3, colors: 4, lineTypes: L4, maxLineRules: 1, redundancy: 1 },
   },
   {
-    file: '04-capela',
-    id: 'capela',
-    title: 'Capela',
-    subtitle: 'Quatro por quatro, e as cores continuam brigando com as vizinhas.',
+    file: '06-em-ordem',
+    id: 'em-ordem',
+    title: 'Em Ordem',
+    subtitle: 'As barras mostram para onde os números crescem.',
     target: 2,
-    options: { rows: 4, cols: 4, colors: 4, boardRules: ['adjacent-colors-differ'], cellRules: 3, redundancy: 1 },
+    teaches: ['ascending'],
+    options: { rows: 3, cols: 4, colors: 4, lineTypes: L5, maxLineRules: 1, redundancy: 1 },
   },
   {
-    file: '05-vitral-do-norte',
-    id: 'vitral-do-norte',
-    title: 'Vitral do Norte',
-    subtitle: 'Cada linha e coluna com cores únicas, e vizinhos com valores diferentes.',
+    file: '07-mesma-cor',
+    id: 'mesma-cor',
+    title: 'Mesma Cor',
+    subtitle: 'Com =, a linha inteira combina.',
     target: 2,
-    options: { rows: 4, cols: 4, colors: 5, boardRules: ['lines-colors-unique', 'adjacent-values-differ'], redundancy: 1 },
+    teaches: ['colors-same'],
+    options: { rows: 3, cols: 4, colors: 4, lineTypes: L6, maxLineRules: 1, redundancy: 1 },
   },
   {
-    file: '06-nave-central',
-    id: 'nave-central',
-    title: 'Nave Central',
-    subtitle: 'Uma janela mais larga, com duas regras gerais ao mesmo tempo.',
+    file: '08-numero-proibido',
+    id: 'numero-proibido',
+    title: 'Número Proibido',
+    subtitle: 'Um dado riscado não pode aparecer.',
+    target: 2,
+    teaches: ['value-none'],
+    options: { rows: 3, cols: 4, colors: 4, lineTypes: L7, maxLineRules: 2, redundancy: 1 },
+  },
+  {
+    file: '09-vizinhos',
+    id: 'vizinhos',
+    title: 'Vizinhos',
+    subtitle: 'O primeiro modificador vale para o vitral inteiro.',
+    target: 2,
+    teaches: ['adjacent-colors-differ'],
+    options: { rows: 3, cols: 4, colors: 4, boardRules: ['adjacent-colors-differ'], lineTypes: L7, maxLineRules: 2, redundancy: 1 },
+  },
+  {
+    file: '10-vizinhos-numeros',
+    id: 'vizinhos-numeros',
+    title: 'Vizinhos Numerados',
+    subtitle: 'Quem se toca pelo lado nunca repete número.',
+    target: 2,
+    teaches: ['adjacent-values-differ'],
+    options: { rows: 4, cols: 4, colors: 4, boardRules: ['adjacent-values-differ'], lineTypes: L7, maxLineRules: 2 },
+  },
+  {
+    file: '11-linhas-e-colunas',
+    id: 'linhas-e-colunas',
+    title: 'Linhas e Colunas',
+    subtitle: 'Nenhum número se repete em linha nenhuma. Parece Sudoku?',
     target: 3,
-    options: { rows: 4, cols: 5, colors: 5, boardRules: ['adjacent-colors-differ', 'lines-values-unique'], cellRules: 2 },
+    teaches: ['lines-values-unique'],
+    options: { rows: 4, cols: 4, colors: 4, boardRules: ['lines-values-unique'], lineTypes: L7, maxLineRules: 2 },
   },
   {
-    file: '07-catedral',
+    file: '12-catedral',
     id: 'catedral',
     title: 'Catedral',
-    subtitle: 'A grande janela: nenhum vizinho repete cor nem valor.',
+    subtitle: 'Tudo o que você aprendeu, numa janela só.',
     target: 3,
-    options: { rows: 5, cols: 5, colors: 5, boardRules: ['adjacent-colors-differ', 'adjacent-values-differ'], cellRules: 3 },
+    teaches: [],
+    options: { rows: 4, cols: 5, colors: 5, boardRules: ['adjacent-colors-differ', 'lines-values-unique'], lineTypes: L7, maxLineRules: 2, cellRules: 2 },
   },
 ];
 
@@ -93,11 +156,13 @@ function cost(chapter: Chapter, g: Generated): number {
   return Math.abs(g.rating.level - chapter.target) * 100 + extraCells * 3 - kinds * 2 + g.def.rules.length * 0.5;
 }
 
+if (!dry && !only) for (const f of readdirSync(levelsDir)) if (f.endsWith('.json')) rmSync(join(levelsDir, f));
+
 for (const [i, chapter] of PLAN.entries()) {
   if (only && Number(only) !== i + 1) continue;
   let best: Generated | null = null;
   for (let seed = 1; seed <= SEEDS; seed++) {
-    const g = generateLevel({ ...chapter.options, seed: seed * 7919 + i });
+    const g = generateLevel({ ...chapter.options, require: chapter.teaches, seed: seed * 7919 + i });
     if (g?.rating.deducible && (!best || cost(chapter, g) < cost(chapter, best))) best = g;
   }
   if (!best) {
@@ -106,7 +171,7 @@ for (const [i, chapter] of PLAN.entries()) {
     continue;
   }
 
-  const def: LevelDef = { id: chapter.id, title: chapter.title, subtitle: chapter.subtitle, ...best.def };
+  const def: LevelDef = { id: chapter.id, title: chapter.title, subtitle: chapter.subtitle, intro: chapter.teaches, ...best.def };
   const { rating } = best;
   console.log(
     `${rating.level === chapter.target ? '✔' : '≈'} ${chapter.file.padEnd(22)} ${def.rows}×${def.cols} ${rating.label.padEnd(8)} ` +

@@ -1,0 +1,103 @@
+{
+  "id": "em-ordem",
+  "title": "Em Ordem",
+  "subtitle": "As barras mostram para onde os números crescem.",
+  "intro": [
+    "ascending"
+  ],
+  "rows": 3,
+  "cols": 4,
+  "dice": [
+    "R3",
+    "R4",
+    "R4",
+    "G3",
+    "G3",
+    "G3",
+    "G3",
+    "G5",
+    "G6",
+    "B2",
+    "B5",
+    "P6"
+  ],
+  "rules": [
+    {
+      "line": "row",
+      "index": 0,
+      "type": "color-count",
+      "color": "red",
+      "count": 1
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "green",
+      "count": 1
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "color-count",
+      "color": "green",
+      "count": 2
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "color-count",
+      "color": "blue",
+      "count": 0
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "sum",
+      "value": 10
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "ascending"
+    },
+    {
+      "type": "cell-value",
+      "row": 0,
+      "col": 1,
+      "value": 5
+    },
+    {
+      "type": "cell-color",
+      "row": 0,
+      "col": 2,
+      "color": "red"
+    },
+    {
+      "type": "cell-color",
+      "row": 2,
+      "col": 0,
+      "color": "red"
+    },
+    {
+      "type": "cell-value",
+      "row": 2,
+      "col": 2,
+      "value": 5
+    }
+  ],
+  "solution": [
+    "G3",
+    "G5",
+    "R3",
+    "G3",
+    "G3",
+    "P6",
+    "B2",
+    "R4",
+    "R4",
+    "G3",
+    "B5",
+    "G6"
+  ]
+}

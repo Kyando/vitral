@@ -1,0 +1,80 @@
+{
+  "id": "contando-cores",
+  "title": "Contando Cores",
+  "subtitle": "Os círculos nas bordas contam os dados de cada cor.",
+  "intro": [
+    "color-count"
+  ],
+  "rows": 3,
+  "cols": 3,
+  "dice": [
+    "R4",
+    "R6",
+    "R6",
+    "R6",
+    "Y6",
+    "Y6",
+    "Y6",
+    "B2",
+    "B4"
+  ],
+  "rules": [
+    {
+      "line": "row",
+      "index": 0,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 0
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "red",
+      "count": 0
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 1
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "color-count",
+      "color": "blue",
+      "count": 0
+    },
+    {
+      "type": "cell-value",
+      "row": 0,
+      "col": 0,
+      "value": 4
+    },
+    {
+      "type": "cell-color",
+      "row": 0,
+      "col": 1,
+      "color": "blue"
+    },
+    {
+      "type": "cell-value",
+      "row": 2,
+      "col": 0,
+      "value": 2
+    }
+  ],
+  "solution": [
+    "R4",
+    "B4",
+    "R6",
+    "Y6",
+    "Y6",
+    "Y6",
+    "B2",
+    "R6",
+    "R6"
+  ]
+}

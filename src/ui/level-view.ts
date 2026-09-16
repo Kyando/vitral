@@ -3,7 +3,7 @@ import { colOf, rowOf } from '../core/puzzle.ts';
 import { lineCells, ruleScope, type Status } from '../core/rules.ts';
 import type { CellRule } from '../core/types.ts';
 import type { Session } from '../game/session.ts';
-import { dieBody, dieLabel, face, ruleBadge, ruleGlyph } from './dice.ts';
+import { dieBody, dieLabel, ruleBadge, ruleGlyph } from './dice.ts';
 import { h, svg } from './dom.ts';
 import { makeDraggable } from './drag.ts';
 import { burst, flip, replay } from './fx.ts';
@@ -23,8 +23,8 @@ type DropTarget = number | 'tray' | null;
 
 const HEADER_RATIO = 0.78;
 /** Smallest header sizes (px): a row header fits one badge's width, a column header fits its stacked badges. */
-const HEAD_MIN_WIDTH = 46;
-const HEAD_MIN_HEIGHT = [30, 34, 60];
+const HEAD_MIN_WIDTH = 60;
+const HEAD_MIN_HEIGHT = [30, 42, 84];
 const RADII = ['12px 9px 13px 10px', '9px 13px 10px 12px', '13px 10px 9px 12px', '10px 12px 12px 9px'];
 const STATUS_ICON: Record<Status, string> = { open: '', ok: ICONS.check, broken: ICONS.close };
 
@@ -109,9 +109,10 @@ export class LevelView {
     });
 
     const boardRules = p.rules.flatMap((rule, i) => (ruleScope(rule) === 'board' ? [i] : []));
+    // Modifiers apply to the whole window, so they sit right above it.
     const rulesList = h(
       'ul',
-      { class: 'rules', 'aria-label': 'Regras gerais' },
+      { class: 'rules', 'aria-label': 'Modificadores' },
       ...boardRules.map((i) => {
         const text = describeRule(p.rules[i]);
         const item = h(
@@ -131,7 +132,7 @@ export class LevelView {
       'section',
       { class: 'tray-panel', 'aria-label': 'Dados' },
       this.trayScroll,
-      h('div', { class: 'tray-foot' }, h('div', { class: 'foot-row' }, tools, this.summary), boardRules.length ? rulesList : null),
+      h('div', { class: 'tray-foot' }, h('div', { class: 'foot-row' }, tools, this.summary)),
     );
     trayPanel.addEventListener('click', (e) => {
       if (!(e.target as Element).closest('.piece, .tray-foot')) this.onTrayTap();
@@ -141,7 +142,7 @@ export class LevelView {
       'main',
       { class: 'stage' },
       heading,
-      h('div', { class: 'play' }, h('div', { class: 'board-area' }, this.boardWrap), trayPanel),
+      h('div', { class: 'play' }, h('div', { class: 'board-area' }, boardRules.length ? rulesList : null, this.boardWrap), trayPanel),
     );
 
     this.resizeObserver = new ResizeObserver(() => this.fit());
@@ -208,7 +209,7 @@ export class LevelView {
         'data-req-color': req?.type === 'cell-color' ? req.color : undefined,
         style: `border-radius: ${RADII[(r * 3 + c) % RADII.length]}`,
       },
-      req?.type === 'cell-value' ? face(req.value, 'face cell-req') : null,
+      req?.type === 'cell-value' ? h('span', { class: 'cell-req', 'aria-hidden': 'true' }, String(req.value)) : null,
       h('span', { class: 'cell-slot' }),
     );
     if (req) {

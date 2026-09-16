@@ -1,0 +1,132 @@
+{
+  "id": "vizinhos-numeros",
+  "title": "Vizinhos Numerados",
+  "subtitle": "Quem se toca pelo lado nunca repete número.",
+  "intro": [
+    "adjacent-values-differ"
+  ],
+  "rows": 4,
+  "cols": 4,
+  "dice": [
+    "R2",
+    "R3",
+    "R5",
+    "Y1",
+    "Y1",
+    "Y2",
+    "Y4",
+    "Y6",
+    "B1",
+    "B1",
+    "B1",
+    "B5",
+    "P4",
+    "P5",
+    "P5",
+    "P6"
+  ],
+  "rules": [
+    {
+      "type": "adjacent-values-differ"
+    },
+    {
+      "line": "row",
+      "index": 0,
+      "type": "color-count",
+      "color": "purple",
+      "count": 2
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "red",
+      "count": 3
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "color-count",
+      "color": "blue",
+      "count": 2
+    },
+    {
+      "line": "row",
+      "index": 3,
+      "type": "descending"
+    },
+    {
+      "line": "row",
+      "index": 3,
+      "type": "color-count",
+      "color": "blue",
+      "count": 1
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "value-none",
+      "value": 5
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "sum",
+      "value": 18
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 2
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "values-unique"
+    },
+    {
+      "type": "cell-value",
+      "row": 0,
+      "col": 1,
+      "value": 6
+    },
+    {
+      "type": "cell-color",
+      "row": 1,
+      "col": 3,
+      "color": "yellow"
+    },
+    {
+      "type": "cell-value",
+      "row": 3,
+      "col": 2,
+      "value": 2
+    },
+    {
+      "type": "cell-color",
+      "row": 3,
+      "col": 3,
+      "color": "yellow"
+    }
+  ],
+  "solution": [
+    "B1",
+    "P6",
+    "Y4",
+    "P5",
+    "R2",
+    "R3",
+    "R5",
+    "Y1",
+    "B1",
+    "P4",
+    "B1",
+    "P5",
+    "Y6",
+    "B5",
+    "Y2",
+    "Y1"
+  ]
+}

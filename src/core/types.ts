@@ -36,7 +36,10 @@ export type LineRule = LineRef &
     | { type: 'sum'; value: number }
     /** Exactly `count` dice of that color (0 means "no dice of that color"). */
     | { type: 'color-count'; color: Color; count: number }
-    | { type: 'parity'; parity: 'even' | 'odd' }
+    /** Every die in the line has the same color. */
+    | { type: 'colors-same' }
+    /** No die in the line shows this value. */
+    | { type: 'value-none'; value: number }
     | { type: 'ascending' }
     | { type: 'descending' }
     | { type: 'colors-unique' }
@@ -63,6 +66,8 @@ export interface LevelDef {
   /** Die codes ("R3", "B5"...). Exactly one die per cell: the board is always full. */
   dice: string[];
   rules: Rule[];
+  /** Mechanics this chapter teaches for the first time, shown as "new symbol" cards. */
+  intro?: RuleType[];
   /** The intended solution, as die codes in reading order (row by row). */
   solution: string[];
 }

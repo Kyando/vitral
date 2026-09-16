@@ -24,6 +24,8 @@ describe('níveis publicados', () => {
       const { solved, grid: deduced } = deduce(p);
       expect(solved).toBe(true);
       expect(deduced.map((d) => dieCode(d!))).toEqual(def.solution);
+      // A chapter that teaches a mechanic has to use it.
+      for (const type of def.intro ?? []) expect(def.rules.map((r) => r.type), type).toContain(type);
     });
   }
 });
@@ -114,7 +116,8 @@ describe('regras', () => {
       { type: 'lines-values-unique' },
       { type: 'sum', line: 'row', index: 1, value: 9 },
       { type: 'color-count', line: 'col', index: 1, color: 'green', count: 1 },
-      { type: 'parity', line: 'row', index: 0, parity: 'odd' },
+      { type: 'colors-same', line: 'row', index: 0 },
+      { type: 'value-none', line: 'col', index: 1, value: 3 },
       { type: 'ascending', line: 'row', index: 0 },
       { type: 'descending', line: 'col', index: 2 },
       { type: 'colors-unique', line: 'row', index: 1 },

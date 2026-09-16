@@ -1,0 +1,89 @@
+{
+  "id": "numeros-diferentes",
+  "title": "Números Diferentes",
+  "subtitle": "Agora o ≠ vale para os números.",
+  "intro": [
+    "values-unique"
+  ],
+  "rows": 3,
+  "cols": 3,
+  "dice": [
+    "R1",
+    "R2",
+    "Y2",
+    "Y5",
+    "G3",
+    "G3",
+    "G3",
+    "P1",
+    "P4"
+  ],
+  "rules": [
+    {
+      "line": "row",
+      "index": 0,
+      "type": "color-count",
+      "color": "purple",
+      "count": 0
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 1
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "values-unique"
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "sum",
+      "value": 6
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "color-count",
+      "color": "purple",
+      "count": 1
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "values-unique"
+    },
+    {
+      "type": "cell-color",
+      "row": 1,
+      "col": 2,
+      "color": "red"
+    },
+    {
+      "type": "cell-color",
+      "row": 2,
+      "col": 1,
+      "color": "yellow"
+    },
+    {
+      "type": "cell-value",
+      "row": 2,
+      "col": 2,
+      "value": 1
+    }
+  ],
+  "solution": [
+    "R1",
+    "G3",
+    "G3",
+    "Y2",
+    "P4",
+    "R2",
+    "G3",
+    "Y5",
+    "P1"
+  ]
+}

@@ -18,31 +18,33 @@ export function describeRule(rule: Rule): string {
     case 'adjacent-colors-differ':
       return 'Dados vizinhos não podem ter a mesma cor';
     case 'adjacent-values-differ':
-      return 'Dados vizinhos não podem ter o mesmo valor';
+      return 'Dados vizinhos não podem ter o mesmo número';
     case 'lines-colors-unique':
       return 'Nenhuma cor se repete numa linha ou coluna';
     case 'lines-values-unique':
-      return 'Nenhum valor se repete numa linha ou coluna';
+      return 'Nenhum número se repete numa linha ou coluna';
     case 'cell-color':
       return `Este quadro pede um dado ${COLOR_NAME[rule.color].one}`;
     case 'cell-value':
-      return `Este quadro pede um dado de valor ${rule.value}`;
+      return `Este quadro pede um dado com o número ${rule.value}`;
     case 'sum':
-      return `${where}: a soma dos valores é ${rule.value}`;
+      return `${where}: os números somam ${rule.value}`;
     case 'color-count': {
       const name = COLOR_NAME[rule.color];
       if (rule.count === 0) return `${where}: nenhum dado ${name.one}`;
       return `${where}: exatamente ${rule.count} ${rule.count === 1 ? `dado ${name.one}` : `dados ${name.many}`}`;
     }
-    case 'parity':
-      return `${where}: só valores ${rule.parity === 'even' ? 'pares' : 'ímpares'}`;
+    case 'colors-same':
+      return `${where}: todos os dados da mesma cor`;
+    case 'value-none':
+      return `${where}: nenhum dado com o número ${rule.value}`;
     case 'ascending':
-      return `${where}: valores crescem ${direction}`;
+      return `${where}: os números sobem ${direction}`;
     case 'descending':
-      return `${where}: valores diminuem ${direction}`;
+      return `${where}: os números descem ${direction}`;
     case 'colors-unique':
       return `${where}: todas as cores são diferentes`;
     case 'values-unique':
-      return `${where}: todos os valores são diferentes`;
+      return `${where}: todos os números são diferentes`;
   }
 }

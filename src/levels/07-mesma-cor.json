@@ -1,0 +1,99 @@
+{
+  "id": "mesma-cor",
+  "title": "Mesma Cor",
+  "subtitle": "Com =, a linha inteira combina.",
+  "intro": [
+    "colors-same"
+  ],
+  "rows": 3,
+  "cols": 4,
+  "dice": [
+    "R1",
+    "R3",
+    "G1",
+    "G4",
+    "G5",
+    "G5",
+    "G5",
+    "G6",
+    "B1",
+    "P2",
+    "P4",
+    "P4"
+  ],
+  "rules": [
+    {
+      "line": "row",
+      "index": 0,
+      "type": "colors-same"
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "sum",
+      "value": 11
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "color-count",
+      "color": "purple",
+      "count": 3
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "values-unique"
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "color-count",
+      "color": "green",
+      "count": 2
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "descending"
+    },
+    {
+      "type": "cell-value",
+      "row": 0,
+      "col": 1,
+      "value": 1
+    },
+    {
+      "type": "cell-value",
+      "row": 0,
+      "col": 2,
+      "value": 4
+    },
+    {
+      "type": "cell-value",
+      "row": 1,
+      "col": 0,
+      "value": 1
+    },
+    {
+      "type": "cell-color",
+      "row": 1,
+      "col": 1,
+      "color": "red"
+    }
+  ],
+  "solution": [
+    "G5",
+    "G1",
+    "G4",
+    "G5",
+    "B1",
+    "R1",
+    "R3",
+    "G6",
+    "P4",
+    "G5",
+    "P2",
+    "P4"
+  ]
+}

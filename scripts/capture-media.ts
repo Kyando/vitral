@@ -4,7 +4,7 @@
  * Drives the locally installed Microsoft Edge through playwright-core (no browser download).
  * Set CAPTURE_CHANNEL=chrome to use Google Chrome instead.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import gifenc from 'gifenc';
 import pngjs from 'pngjs';
@@ -37,7 +37,7 @@ const saveData = (setup: Setup): string =>
   JSON.stringify({
     version: 1,
     levels: { [setup.level]: { placements: setup.placements ?? {}, done: false, moves: 0 } },
-    settings: { theme: setup.theme ?? 'light', sound: false, seenHelp: true, lastLevel: setup.level },
+    settings: { theme: setup.theme ?? 'light', sound: false, seenHelp: true, lastLevel: setup.level, seenLessons: ALL_LESSONS },
   });
 
 /** A visible arrow cursor, since headless screenshots don't include the real one. */
@@ -153,6 +153,8 @@ class GifRecorder {
   }
 }
 
+const ALL_LESSONS = readdirSync(join(root, 'src/levels')).filter((f) => f.endsWith('.json')).flatMap((f) => (JSON.parse(readFileSync(join(root, 'src/levels', f), 'utf8')) as LevelDef).intro ?? []);
+
 const level = (file: string): LevelDef => JSON.parse(readFileSync(join(root, 'src/levels', file), 'utf8')) as LevelDef;
 
 /** Die index for each solution cell (identical dice are matched in order). */
@@ -183,7 +185,7 @@ function withMistake(def: LevelDef, placements: Record<string, string>): Record<
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 
 async function recordDragGif(browser: Browser): Promise<void> {
-  const def = level('01-primeira-janela.json');
+  const def = level('02-contando-cores.json');
   const dice = solutionDice(def);
   const page = await open(browser, { level: def.id, placements: placementsOf(def, (cell) => cell < 4) }, { width: 960, height: 640 }, { cursor: true });
   const rec = new GifRecorder(page);
@@ -237,26 +239,26 @@ const browser = await chromium.launch({ channel: process.env.CAPTURE_CHANNEL ?? 
 try {
   const desktop = { width: 1280, height: 820 };
 
-  const chapel = level('04-capela.json');
+  const chapel = level('10-vizinhos-numeros.json');
   await screenshot(
     await open(browser, { level: chapel.id, placements: placementsOf(chapel, (cell) => cell % 3 !== 2 && cell < 12) }, desktop, { scale: 1.5 }),
     'hero-light.png',
   );
 
-  const nave = level('06-nave-central.json');
+  const nave = level('12-catedral.json');
   const dark = await open(browser, { level: nave.id, theme: 'dark', placements: placementsOf(nave, (cell) => cell % 2 === 0) }, desktop, { scale: 1.5 });
   await dark.locator('.tray .piece').first().click();
   await dark.waitForTimeout(400);
   await screenshot(dark, 'dark.png');
 
-  const skylight = level('03-claraboia.json');
+  const skylight = level('06-em-ordem.json');
   await screenshot(
     await open(browser, { level: skylight.id, placements: placementsOf(skylight, (cell) => cell < 5) }, { width: 390, height: 844 }, { scale: 2, mobile: true }),
     'mobile.png',
   );
 
   // Live validation: a nearly full board with two dice swapped.
-  const north = level('05-vitral-do-norte.json');
+  const north = level('11-linhas-e-colunas.json');
   const broken = withMistake(north, placementsOf(north, (cell) => cell < 13));
   await screenshot(await open(browser, { level: north.id, placements: broken }, desktop, { scale: 1.5 }), 'rules.png');
 

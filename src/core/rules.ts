@@ -131,10 +131,13 @@ export function evaluate(s: Shape, rule: Rule, grid: Grid): Verdict {
       return verdict([], complete);
     }
 
-    case 'parity': {
-      const want = rule.parity === 'even' ? 0 : 1;
-      return verdict(placed.filter((cell) => die(cell).value % 2 !== want), complete);
+    case 'colors-same': {
+      const colors = new Set(placed.map((cell) => die(cell).color));
+      return verdict(colors.size > 1 ? placed : [], complete);
     }
+
+    case 'value-none':
+      return verdict(placed.filter((cell) => die(cell).value === rule.value), complete);
 
     case 'ascending':
     case 'descending': {
@@ -242,10 +245,18 @@ export function compileRule(s: Shape, rule: Rule): BreakCheck {
         return matching > rule.count || matching + empty < rule.count;
       };
 
-    case 'parity': {
-      const want = rule.parity === 'even' ? 0 : 1;
-      return (grid, cell) => grid[cell]!.value % 2 !== want;
-    }
+    case 'colors-same':
+      return (grid, cell) => {
+        const color = grid[cell]!.color;
+        for (let k = 0; k < n; k++) {
+          const d = grid[cells[k]];
+          if (d && d.color !== color) return true;
+        }
+        return false;
+      };
+
+    case 'value-none':
+      return (grid, cell) => grid[cell]!.value === rule.value;
 
     case 'ascending':
     case 'descending': {

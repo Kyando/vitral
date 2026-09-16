@@ -1,0 +1,41 @@
+{
+  "id": "vidro-colorido",
+  "title": "Vidro Colorido",
+  "subtitle": "Cada quadro pede uma cor ou um número.",
+  "intro": [
+    "cell-color",
+    "cell-value"
+  ],
+  "rows": 2,
+  "cols": 3,
+  "dice": [
+    "G2",
+    "G2",
+    "G2",
+    "G2",
+    "B5",
+    "B5"
+  ],
+  "rules": [
+    {
+      "type": "cell-color",
+      "row": 1,
+      "col": 1,
+      "color": "blue"
+    },
+    {
+      "type": "cell-value",
+      "row": 1,
+      "col": 2,
+      "value": 5
+    }
+  ],
+  "solution": [
+    "G2",
+    "G2",
+    "G2",
+    "G2",
+    "B5",
+    "B5"
+  ]
+}

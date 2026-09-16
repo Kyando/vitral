@@ -1,0 +1,77 @@
+{
+  "id": "soma",
+  "title": "A Soma",
+  "subtitle": "O dado com ? é um número qualquer.",
+  "intro": [
+    "sum"
+  ],
+  "rows": 3,
+  "cols": 3,
+  "dice": [
+    "R4",
+    "G1",
+    "G6",
+    "G6",
+    "G6",
+    "P3",
+    "P3",
+    "P4",
+    "P5"
+  ],
+  "rules": [
+    {
+      "line": "row",
+      "index": 0,
+      "type": "color-count",
+      "color": "purple",
+      "count": 2
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "red",
+      "count": 0
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "sum",
+      "value": 12
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "colors-unique"
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "sum",
+      "value": 16
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "sum",
+      "value": 9
+    },
+    {
+      "type": "cell-value",
+      "row": 2,
+      "col": 0,
+      "value": 3
+    }
+  ],
+  "solution": [
+    "R4",
+    "P4",
+    "P5",
+    "G6",
+    "G6",
+    "G1",
+    "P3",
+    "G6",
+    "P3"
+  ]
+}

@@ -2,7 +2,8 @@ import type { Color } from '../core/types.ts';
 import { emptyProgress, loadSave, writeSave, type ThemeChoice } from '../game/save.ts';
 import { Session } from '../game/session.ts';
 import { CATALOG } from '../levels/catalog.ts';
-import { dieBody, ruleBadge, ruleGlyph } from './dice.ts';
+import { dieBody, glyph, ruleGlyph, type GlyphSpec } from './dice.ts';
+import { LESSONS, RADICALS } from './lessons.ts';
 import { h, svg } from './dom.ts';
 import { ICONS } from './icons.ts';
 import { LevelView } from './level-view.ts';
@@ -56,7 +57,9 @@ export class App {
     if (!this.save.settings.seenHelp) {
       this.save.settings.seenHelp = true;
       this.persist();
-      this.openHelp();
+      this.openHelp(() => this.showLessons());
+    } else {
+      this.showLessons();
     }
   }
 
@@ -80,6 +83,36 @@ export class App {
     this.main.replaceChildren(this.view.el);
     this.save.settings.lastLevel = entry.def.id;
     this.persist();
+  }
+
+  /** Introduces the mechanics a chapter uses for the first time, once per mechanic. */
+  private showLessons(): void {
+    const seen = this.save.settings.seenLessons;
+    const lessons = (CATALOG[this.index].def.intro ?? []).filter((type) => LESSONS[type] && !seen.includes(type));
+    if (!lessons.length) return;
+    seen.push(...lessons);
+    this.persist();
+    const example = (g: GlyphSpec, caption: string) =>
+      h('figure', { class: 'lesson-example' }, h('span', { class: 'lesson-glyph' }, glyph(g)), h('figcaption', {}, caption));
+    const modal = openModal({
+      title: lessons.some((type) => LESSONS[type]!.modifier) ? 'Novo modificador' : 'Novo símbolo',
+      className: 'modal--lesson',
+      body: h(
+        'div',
+        { class: 'lessons' },
+        ...lessons.map((type) => {
+          const lesson = LESSONS[type]!;
+          return h(
+            'section',
+            { class: 'lesson' },
+            h('h3', {}, lesson.title),
+            h('div', { class: 'lesson-examples' }, ...lesson.examples.map((ex) => example(ex.glyph, ex.caption))),
+            h('p', {}, lesson.text),
+          );
+        }),
+      ),
+      actions: [h('button', { type: 'button', class: 'btn btn--primary', onclick: () => modal.close() }, 'Entendi')],
+    });
   }
 
   // ── modals ──────────────────────────────────────────────────────────────
@@ -106,6 +139,7 @@ export class App {
                 onclick: () => {
                   modal.close();
                   this.openLevel(i);
+                  this.showLessons();
                 },
               },
               h('span', { class: 'chapter-num' }, progress?.done ? '✓' : String(i + 1)),
@@ -119,21 +153,22 @@ export class App {
     });
   }
 
-  private openHelp(): void {
+  private openHelp(onClose?: () => void): void {
     const die = (color: Color, value: number) => h('span', { class: 'die ex-die' }, dieBody({ color, value }));
     const status = (className: string, text: string) =>
       h('li', { class: 'legend-item' }, h('span', { class: `badge ${className}` }, ruleGlyph({ type: 'sum', line: 'row', index: 0, value: 9 })), text);
-    openModal({
+    const modal = openModal({
       title: 'Como jogar',
       className: 'modal--help',
+      onClose,
       body: h(
         'div',
         { class: 'help' },
-        h('p', {}, 'Monte o vitral: arraste cada dado para um quadro, até o tabuleiro ficar cheio, sem quebrar nenhuma regra.'),
+        h('p', {}, 'Arraste cada dado para um quadro do vitral até ele ficar cheio, sem quebrar nenhuma regra.'),
         h(
           'div',
-          { class: 'example', 'aria-label': 'Exemplo: uma linha com soma 9 recebe os dados 2, 3 e 4' },
-          h('span', { class: 'ex-head' }, ruleBadge({ type: 'sum', line: 'row', index: 0, value: 9 })),
+          { class: 'example', 'aria-label': 'Exemplo: uma linha que soma 9 recebe os dados 2, 3 e 4' },
+          h('span', { class: 'ex-head' }, h('span', { class: 'badge' }, ruleGlyph({ type: 'sum', line: 'row', index: 0, value: 9 }))),
           die('red', 2),
           die('blue', 3),
           die('yellow', 4),
@@ -141,10 +176,21 @@ export class App {
         h(
           'ul',
           {},
-          h('li', {}, 'As regras de cada ', h('b', {}, 'linha'), ' ficam à esquerda; as de cada ', h('b', {}, 'coluna'), ', no topo. Toque nelas para ler.'),
-          h('li', {}, 'Alguns quadros pedem uma ', h('b', {}, 'cor'), ' ou um ', h('b', {}, 'valor'), ' específico.'),
-          h('li', {}, 'As ', h('b', {}, 'regras gerais'), ' valem para o vitral inteiro e aparecem abaixo dos dados.'),
+          h('li', {}, 'Cada regra é um ', h('b', {}, 'símbolo'), ': as das linhas ficam à esquerda, as das colunas no topo. Toque para ler.'),
+          h('li', {}, h('b', {}, 'Modificadores'), ' ficam acima do vitral e valem para ele inteiro.'),
           h('li', {}, 'Tudo é conferido a cada jogada. Dá para resolver só com lógica, sem chutar.'),
+        ),
+        ...RADICALS.map((group) =>
+          h(
+            'section',
+            { class: 'glossary' },
+            h('h3', {}, group.title),
+            h(
+              'ul',
+              {},
+              ...group.items.map((item) => h('li', {}, h('span', { class: 'glossary-glyph' }, glyph(item.glyph)), h('span', {}, item.caption))),
+            ),
+          ),
         ),
         h(
           'ul',
@@ -154,7 +200,7 @@ export class App {
           status('is-broken', 'quebrada: os dados culpados ficam marcados'),
         ),
       ),
-      actions: [h('button', { type: 'button', class: 'btn btn--primary', onclick: (e: Event) => (e.target as HTMLElement).closest('dialog')?.close() }, 'Vamos lá')],
+      actions: [h('button', { type: 'button', class: 'btn btn--primary', onclick: () => modal.close() }, 'Vamos lá')],
     });
   }
 
@@ -194,7 +240,7 @@ export class App {
       actions: [
         h('button', { type: 'button', class: 'btn', onclick: share }, svg(ICONS.share), h('span', {}, 'Compartilhar')),
         hasNext
-          ? h('button', { type: 'button', class: 'btn btn--primary', onclick: () => { modal.close(); this.openLevel(this.index + 1); } }, h('span', {}, 'Próximo'), svg(ICONS.arrow))
+          ? h('button', { type: 'button', class: 'btn btn--primary', onclick: () => { modal.close(); this.openLevel(this.index + 1); this.showLessons(); } }, h('span', {}, 'Próximo'), svg(ICONS.arrow))
           : h('button', { type: 'button', class: 'btn btn--primary', onclick: () => { modal.close(); this.openChapters(); } }, h('span', {}, 'Capítulos')),
       ],
     });

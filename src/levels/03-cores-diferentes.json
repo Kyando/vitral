@@ -1,0 +1,92 @@
+{
+  "id": "cores-diferentes",
+  "title": "Cores Diferentes",
+  "subtitle": "Nenhuma cor se repete onde houver ≠.",
+  "intro": [
+    "colors-unique"
+  ],
+  "rows": 3,
+  "cols": 3,
+  "dice": [
+    "R3",
+    "R3",
+    "G4",
+    "G4",
+    "G6",
+    "G6",
+    "G6",
+    "P2",
+    "P2"
+  ],
+  "rules": [
+    {
+      "line": "row",
+      "index": 0,
+      "type": "color-count",
+      "color": "purple",
+      "count": 1
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "colors-unique"
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "color-count",
+      "color": "red",
+      "count": 0
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "color-count",
+      "color": "green",
+      "count": 1
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "color-count",
+      "color": "green",
+      "count": 2
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "color-count",
+      "color": "red",
+      "count": 1
+    },
+    {
+      "type": "cell-value",
+      "row": 0,
+      "col": 1,
+      "value": 4
+    },
+    {
+      "type": "cell-color",
+      "row": 1,
+      "col": 1,
+      "color": "red"
+    },
+    {
+      "type": "cell-value",
+      "row": 1,
+      "col": 2,
+      "value": 4
+    }
+  ],
+  "solution": [
+    "P2",
+    "G4",
+    "R3",
+    "P2",
+    "R3",
+    "G4",
+    "G6",
+    "G6",
+    "G6"
+  ]
+}

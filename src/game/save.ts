@@ -12,7 +12,7 @@ export type ThemeChoice = 'system' | 'light' | 'dark';
 export interface SaveData {
   version: 1;
   levels: Record<string, LevelProgress>;
-  settings: { theme: ThemeChoice; sound: boolean; seenHelp: boolean; lastLevel: string | null };
+  settings: { theme: ThemeChoice; sound: boolean; seenHelp: boolean; lastLevel: string | null; seenLessons: string[] };
 }
 
 export const SAVE_KEY = 'vitral:v1';
@@ -20,7 +20,7 @@ export const SAVE_KEY = 'vitral:v1';
 const defaults = (): SaveData => ({
   version: 1,
   levels: {},
-  settings: { theme: 'system', sound: true, seenHelp: false, lastLevel: null },
+  settings: { theme: 'system', sound: true, seenHelp: false, lastLevel: null, seenLessons: [] },
 });
 
 export const emptyProgress = (): LevelProgress => ({ placements: {}, done: false, moves: 0 });

@@ -19,6 +19,8 @@ export interface GenerateOptions {
   maxLineRules?: number;
   /** Cell restrictions placed first and always kept, for the Sagrada window look. */
   cellRules?: number;
+  /** Rule types the level must show at least once (the mechanics a chapter teaches). */
+  require?: RuleType[];
   /** Extra redundant rules kept after minimizing: higher is easier. */
   redundancy?: number;
   attempts?: number;
@@ -29,13 +31,14 @@ export interface Generated {
   rating: Rating;
 }
 
-const ALL_LINE_TYPES: LineRuleType[] = ['sum', 'color-count', 'parity', 'ascending', 'descending', 'colors-unique', 'values-unique'];
+const ALL_LINE_TYPES: LineRuleType[] = ['sum', 'color-count', 'ascending', 'descending', 'colors-unique', 'values-unique', 'colors-same', 'value-none'];
 
 /** Rarer, more flavourful rules get picked first when they are true. */
 const WEIGHT: Record<LineRuleType, number> = {
   sum: 1,
   'color-count': 1.2,
-  parity: 2.5,
+  'colors-same': 3,
+  'value-none': 0.6,
   ascending: 3,
   descending: 3,
   'colors-unique': 1.5,
@@ -113,8 +116,8 @@ function trueRules(o: GenerateOptions, solution: Grid, palette: Color[], boardTy
 
     add({ ...ref, type: 'sum', value: values.reduce((a, b) => a + b, 0) });
     for (const color of palette) add({ ...ref, type: 'color-count', color, count: dice.filter((d) => d.color === color).length });
-    if (values.every((v) => v % 2 === 0)) add({ ...ref, type: 'parity', parity: 'even' });
-    if (values.every((v) => v % 2 === 1)) add({ ...ref, type: 'parity', parity: 'odd' });
+    if (dice.length > 1 && dice.every((d) => d.color === dice[0].color)) add({ ...ref, type: 'colors-same' });
+    for (let value = 1; value <= 6; value++) if (!values.includes(value)) add({ ...ref, type: 'value-none', value });
     if (dice.length > 1 && values.every((v, i) => i === 0 || v > values[i - 1])) add({ ...ref, type: 'ascending' });
     if (dice.length > 1 && values.every((v, i) => i === 0 || v < values[i - 1])) add({ ...ref, type: 'descending' });
     if (!boardTypes.has('lines-colors-unique') && new Set(dice.map((d) => d.color)).size === dice.length) add({ ...ref, type: 'colors-unique' });
@@ -161,6 +164,16 @@ export function generateLevel(o: GenerateOptions): Generated | null {
       if (!protectedRules.some((r) => cellKeyOf(r) === cellKeyOf(rule))) protectedRules.push(rule);
     }
 
+    // Mechanics the chapter teaches are placed first and never removed.
+    const required = (o.require ?? []).filter((type) => !boardTypes.has(type) && type !== 'cell-color' && type !== 'cell-value');
+    const requiredRules = required.map((type) => shuffle(pool.line.filter((r) => r.type === type), rand)[0]);
+    if (requiredRules.some((r) => !r)) continue;
+    for (const type of ['cell-color', 'cell-value'] as const) {
+      if (!o.require?.includes(type) || protectedRules.some((r) => r.type === type)) continue;
+      const rule = cellRules.find((r) => r.type === type && !protectedRules.some((p) => cellKeyOf(p) === cellKeyOf(r)));
+      if (rule) protectedRules.push(rule);
+    }
+
     const chosen: Rule[] = [...boardRules, ...protectedRules];
     const perLine = new Map<string, LineRule[]>();
     const canAdd = (rule: LineRule) => {
@@ -171,6 +184,8 @@ export function generateLevel(o: GenerateOptions): Generated | null {
       chosen.push(rule);
       perLine.set(lineKey(rule), [...(perLine.get(lineKey(rule)) ?? []), rule]);
     };
+    requiredRules.forEach((rule) => addLine(rule!));
+    protectedRules.push(...requiredRules.map((r) => r!));
 
     // Grow until the solution is the only one.
     let solved = unique(chosen);

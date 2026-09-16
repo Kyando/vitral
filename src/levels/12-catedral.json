@@ -1,0 +1,140 @@
+{
+  "id": "catedral",
+  "title": "Catedral",
+  "subtitle": "Tudo o que você aprendeu, numa janela só.",
+  "intro": [],
+  "rows": 4,
+  "cols": 5,
+  "dice": [
+    "R2",
+    "R2",
+    "R2",
+    "R4",
+    "R6",
+    "Y5",
+    "Y5",
+    "G3",
+    "G3",
+    "G4",
+    "G5",
+    "B1",
+    "B6",
+    "P1",
+    "P1",
+    "P3",
+    "P3",
+    "P4",
+    "P6",
+    "P6"
+  ],
+  "rules": [
+    {
+      "type": "adjacent-colors-differ"
+    },
+    {
+      "type": "lines-values-unique"
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "sum",
+      "value": 17
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 0
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "sum",
+      "value": 19
+    },
+    {
+      "line": "row",
+      "index": 3,
+      "type": "sum",
+      "value": 20
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "value-none",
+      "value": 1
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "ascending"
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 1
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "sum",
+      "value": 18
+    },
+    {
+      "line": "col",
+      "index": 4,
+      "type": "color-count",
+      "color": "purple",
+      "count": 0
+    },
+    {
+      "type": "cell-value",
+      "row": 1,
+      "col": 4,
+      "value": 3
+    },
+    {
+      "type": "cell-value",
+      "row": 2,
+      "col": 0,
+      "value": 3
+    },
+    {
+      "type": "cell-color",
+      "row": 3,
+      "col": 2,
+      "color": "purple"
+    },
+    {
+      "type": "cell-value",
+      "row": 3,
+      "col": 3,
+      "value": 4
+    }
+  ],
+  "solution": [
+    "R4",
+    "P1",
+    "B6",
+    "P3",
+    "R2",
+    "P6",
+    "R2",
+    "P1",
+    "Y5",
+    "G3",
+    "G3",
+    "P4",
+    "G5",
+    "P6",
+    "B1",
+    "R2",
+    "Y5",
+    "P3",
+    "G4",
+    "R6"
+  ]
+}

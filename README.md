@@ -20,13 +20,25 @@ Place every die in the window without breaking a single rule.
 
 Vitral started as a fork of [Inklink](https://github.com/Kyando/inklink), a word-association puzzle inspired by *Entre-linhas*, *Sudoku*, *Termo* and the *Einstein riddle*. Words are subjective; **dice are not**. So the board keeps the same shape (rules on rows and columns, one piece per cell, a full board), but the pieces become coloured dice, borrowing the window-building of the board game *Sagrada*.
 
-Every level gives you exactly one die per cell and three kinds of rules:
+Every level gives you exactly one die per cell, and rules written as **symbols**.
 
-| Where | Examples |
+## A symbol language
+
+Each rule is one composed glyph, read left to right like a kanji built from radicals:
+
+| Part | Meaning |
 |---|---|
-| **Board rules** (under the dice) | neighbouring dice never share a colour · no value repeats in a row or column |
-| **Row / column rules** (headers) | the values add up to 12 · exactly 2 blue dice · no red · only odd values · values increase · all colours different |
-| **Cell restrictions** (Sagrada window) | this cell takes a yellow die · this cell takes a 4 |
+| **Subject** | a circle is a color (split circle: any color), a die is a number (die with **?**: any number) |
+| **Operator** | ≠ all different · = all the same · a slash means none · repetition means exactly N (●● = exactly 2) · bars mean going up/down · +12 means adds up to 12 |
+| **Scope** (modifiers only) | a cross of cells = neighbours · arrows = every row and column |
+
+Where a glyph sits says where it applies: row rules on the left, column rules on top, **modifiers** above the window (they apply to all of it). Cells can also ask for a color (tinted glass) or a number (carved digit), like the windows of *Sagrada*.
+
+The same glyph gains a scope to become a modifier: "numbers all different" on a row header, or with arrows for every row and column. Tap any glyph to read it; the help screen has the full glossary.
+
+## Learning one mechanic at a time
+
+Twelve chapters introduce the language one piece at a time, each with a "new symbol" card the first time it appears: colored and carved cells → counting colors → different colors → sums → different numbers → order → same color → forbidden number → neighbours (first modifier) → neighbours with numbers → every row and column → a final mixed window. A chapter only uses what has already been taught.
 
 ## Live validation
 
@@ -73,7 +85,7 @@ npm install
 npm run dev                          # play locally
 npm test                             # rules, solver agreement, generator and every shipped level
 npm run levels                       # validate levels and print their difficulty (-- --rules to list them)
-npm run levels:generate              # regenerate the chapters from the plan in scripts/generate-levels.ts
+npm run levels:generate              # regenerate the chapters (teaching plan in scripts/generate-levels.ts)
 npm run levels:generate -- 3 --dry   # preview one chapter without writing it
 npm run media                        # regenerate README screenshots & GIF (uses local Edge)
 npm run deploy                       # build and publish to GitHub Pages
@@ -88,6 +100,8 @@ src/
     deduce.ts    human-style solver → uniqueness proof and difficulty
     generate.ts  seeded level generator
     describe.ts  player-facing rule text (pt-BR)
+  ui/dice.ts    dice and the rule glyph renderer
+  ui/lessons.ts "new symbol" cards and the glossary
   game/      session state, undo, persistence
   levels/    *.json levels (ordered by file name)
   ui/        vanilla DOM + CSS (FLIP animations, pointer drag, synth SFX)

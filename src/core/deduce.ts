@@ -159,6 +159,18 @@ export function deduce(p: SolveInput): Deduction {
           }
           break;
         }
+        case 'colors-same': {
+          const cells = lineCells(p, rule);
+          for (const cell of cells) {
+            if (grid[cell]) continue;
+            for (const other of cells) {
+              if (other === cell) continue;
+              const k = forced(other, color);
+              if (k !== undefined) drop(cell, (d) => d.color === k);
+            }
+          }
+          break;
+        }
         case 'sum':
         case 'color-count':
         case 'ascending':
