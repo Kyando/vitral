@@ -139,6 +139,12 @@ export function evaluate(s: Shape, rule: Rule, grid: Grid): Verdict {
     case 'value-none':
       return verdict(placed.filter((cell) => die(cell).value === rule.value), complete);
 
+    case 'values-below':
+      return verdict(placed.filter((cell) => die(cell).value >= rule.value), complete);
+
+    case 'values-above':
+      return verdict(placed.filter((cell) => die(cell).value <= rule.value), complete);
+
     case 'ascending':
     case 'descending': {
       // Strictly monotonic: positions i < j need a gap of at least j - i between their values.
@@ -257,6 +263,12 @@ export function compileRule(s: Shape, rule: Rule): BreakCheck {
 
     case 'value-none':
       return (grid, cell) => grid[cell]!.value === rule.value;
+
+    case 'values-below':
+      return (grid, cell) => grid[cell]!.value >= rule.value;
+
+    case 'values-above':
+      return (grid, cell) => grid[cell]!.value <= rule.value;
 
     case 'ascending':
     case 'descending': {

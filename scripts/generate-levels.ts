@@ -30,6 +30,7 @@ const L4: LineRuleType[] = [...L3, 'values-unique'];
 const L5: LineRuleType[] = [...L4, 'ascending', 'descending'];
 const L6: LineRuleType[] = [...L5, 'colors-same'];
 const L7: LineRuleType[] = [...L6, 'value-none'];
+const L8: LineRuleType[] = [...L7, 'values-below', 'values-above'];
 
 const PLAN: Chapter[] = [
   {
@@ -105,40 +106,49 @@ const PLAN: Chapter[] = [
     options: { rows: 3, cols: 4, colors: 4, lineTypes: L7, maxLineRules: 2, redundancy: 1 },
   },
   {
-    file: '09-vizinhos',
+    file: '09-maior-e-menor',
+    id: 'maior-e-menor',
+    title: 'Maior e Menor',
+    subtitle: 'Com <4, tudo fica abaixo de 4; com >3, acima de 3.',
+    target: 2,
+    teaches: ['values-below', 'values-above'],
+    options: { rows: 3, cols: 4, colors: 4, lineTypes: L8, maxLineRules: 2, redundancy: 1 },
+  },
+  {
+    file: '10-vizinhos',
     id: 'vizinhos',
     title: 'Vizinhos',
     subtitle: 'O primeiro modificador vale para o vitral inteiro.',
     target: 2,
     teaches: ['adjacent-colors-differ'],
-    options: { rows: 3, cols: 4, colors: 4, boardRules: ['adjacent-colors-differ'], lineTypes: L7, maxLineRules: 2, redundancy: 1 },
+    options: { rows: 3, cols: 4, colors: 4, boardRules: ['adjacent-colors-differ'], lineTypes: L8, maxLineRules: 2, redundancy: 1 },
   },
   {
-    file: '10-vizinhos-numeros',
+    file: '11-vizinhos-numeros',
     id: 'vizinhos-numeros',
     title: 'Vizinhos Numerados',
     subtitle: 'Quem se toca pelo lado nunca repete número.',
     target: 2,
     teaches: ['adjacent-values-differ'],
-    options: { rows: 4, cols: 4, colors: 4, boardRules: ['adjacent-values-differ'], lineTypes: L7, maxLineRules: 2 },
+    options: { rows: 4, cols: 4, colors: 4, boardRules: ['adjacent-values-differ'], lineTypes: L8, maxLineRules: 2 },
   },
   {
-    file: '11-linhas-e-colunas',
+    file: '12-linhas-e-colunas',
     id: 'linhas-e-colunas',
     title: 'Linhas e Colunas',
     subtitle: 'Nenhum número se repete em linha nenhuma. Parece Sudoku?',
     target: 3,
     teaches: ['lines-values-unique'],
-    options: { rows: 4, cols: 4, colors: 4, boardRules: ['lines-values-unique'], lineTypes: L7, maxLineRules: 2 },
+    options: { rows: 4, cols: 4, colors: 4, boardRules: ['lines-values-unique'], lineTypes: L8, maxLineRules: 2 },
   },
   {
-    file: '12-catedral',
+    file: '13-catedral',
     id: 'catedral',
     title: 'Catedral',
     subtitle: 'Tudo o que você aprendeu, numa janela só.',
     target: 3,
     teaches: [],
-    options: { rows: 4, cols: 5, colors: 5, boardRules: ['adjacent-colors-differ', 'lines-values-unique'], lineTypes: L7, maxLineRules: 2, cellRules: 2 },
+    options: { rows: 4, cols: 5, colors: 5, boardRules: ['adjacent-colors-differ', 'lines-values-unique'], lineTypes: L8, maxLineRules: 2, cellRules: 2 },
   },
 ];
 

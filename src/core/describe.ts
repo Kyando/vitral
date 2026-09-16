@@ -36,6 +36,10 @@ export function describeRule(rule: Rule): string {
     }
     case 'colors-same':
       return `${where}: todos os dados da mesma cor`;
+    case 'values-below':
+      return `${where}: todos os números menores que ${rule.value}`;
+    case 'values-above':
+      return `${where}: todos os números maiores que ${rule.value}`;
     case 'value-none':
       return `${where}: nenhum dado com o número ${rule.value}`;
     case 'ascending':

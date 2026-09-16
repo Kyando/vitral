@@ -56,6 +56,14 @@ export const LESSONS: Partial<Record<RuleType, Lesson>> = {
       { glyph: { number: 'any', op: 'down' }, caption: 'os números descem' },
     ],
   },
+  'values-below': {
+    title: 'Maior e menor',
+    text: 'Dado vazio com <4: todos os números da linha ou coluna são menores que 4. Com >3, todos são maiores que 3.',
+    examples: [
+      { glyph: { number: 'any', op: 'below', n: 4 }, caption: 'todos menores que 4' },
+      { glyph: { number: 'any', op: 'above', n: 3 }, caption: 'todos maiores que 3' },
+    ],
+  },
   'colors-same': {
     title: 'Cores idênticas',
     text: 'Três dados da mesma cor: todos os dados da linha ou coluna têm a mesma cor.',
@@ -112,6 +120,8 @@ export const RADICALS: { title: string; items: { glyph: GlyphSpec; caption: stri
       { glyph: { color: 'red', op: 'none' }, caption: 'nenhum' },
       { glyph: { number: 'any', op: 'up' }, caption: 'em ordem' },
       { glyph: { number: 'any', op: 'total', n: 12 }, caption: 'soma 12' },
+      { glyph: { number: 'any', op: 'below', n: 4 }, caption: 'menores que 4' },
+      { glyph: { number: 'any', op: 'above', n: 3 }, caption: 'maiores que 3' },
     ],
   },
   {

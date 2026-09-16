@@ -29,7 +29,7 @@ Everything is a die, as in *Sagrada*: the **fill** is the color (transparent = a
 | Part | Meaning |
 |---|---|
 | **Subject** | a red tile = red · a die with 5 pips = five · an empty die = any die |
-| **Operator** | ×2 exactly 2 (×0 none) · =12 adds up to 12 · ↗ numbers only go up (↘ down) |
+| **Operator** | ×2 exactly 2 (×0 none) · =12 adds up to 12 · <4 all below 4 · >3 all above 3 · ↗ numbers only go up (↘ down) |
 | **Unique / identical** | three small dice that differ (or match) in color or in number: they carry the attribute themselves |
 | **Scope** (modifiers only) | a cross of cells = neighbours · a grid = every row and column |
 
@@ -39,7 +39,7 @@ Tap any glyph to read it; the help screen has the full glossary.
 
 ## Learning one mechanic at a time
 
-Twelve chapters introduce the language one piece at a time, each with a "new symbol" card the first time it appears: colored and carved cells → counting colors → different colors → sums → different numbers → order → same color → forbidden number → neighbours (first modifier) → neighbours with numbers → every row and column → a final mixed window. A chapter only uses what has already been taught.
+Thirteen chapters introduce the language one piece at a time, each with a "new symbol" card the first time it appears: colored and carved cells → counting colors → different colors → sums → different numbers → order → same color → forbidden number → less and greater than → neighbours (first modifier) → neighbours with numbers → every row and column → a final mixed window. A chapter only uses what has already been taught.
 
 ## Live validation
 

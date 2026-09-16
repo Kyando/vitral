@@ -31,7 +31,7 @@ export interface Generated {
   rating: Rating;
 }
 
-const ALL_LINE_TYPES: LineRuleType[] = ['sum', 'color-count', 'ascending', 'descending', 'colors-unique', 'values-unique', 'colors-same', 'value-none'];
+const ALL_LINE_TYPES: LineRuleType[] = ['sum', 'color-count', 'ascending', 'descending', 'colors-unique', 'values-unique', 'colors-same', 'value-none', 'values-below', 'values-above'];
 
 /** Rarer, more flavourful rules get picked first when they are true. */
 const WEIGHT: Record<LineRuleType, number> = {
@@ -39,6 +39,8 @@ const WEIGHT: Record<LineRuleType, number> = {
   'color-count': 1.2,
   'colors-same': 3,
   'value-none': 0.6,
+  'values-below': 1.6,
+  'values-above': 1.6,
   ascending: 3,
   descending: 3,
   'colors-unique': 1.5,
@@ -118,6 +120,10 @@ function trueRules(o: GenerateOptions, solution: Grid, palette: Color[], boardTy
     for (const color of palette) add({ ...ref, type: 'color-count', color, count: dice.filter((d) => d.color === color).length });
     if (dice.length > 1 && dice.every((d) => d.color === dice[0].color)) add({ ...ref, type: 'colors-same' });
     for (let value = 1; value <= 6; value++) if (!values.includes(value)) add({ ...ref, type: 'value-none', value });
+    // The tightest bound is the informative one; "less than 7" says nothing.
+    const [lo, hi] = [Math.min(...values), Math.max(...values)];
+    if (hi < 6) add({ ...ref, type: 'values-below', value: hi + 1 });
+    if (lo > 1) add({ ...ref, type: 'values-above', value: lo - 1 });
     if (dice.length > 1 && values.every((v, i) => i === 0 || v > values[i - 1])) add({ ...ref, type: 'ascending' });
     if (dice.length > 1 && values.every((v, i) => i === 0 || v < values[i - 1])) add({ ...ref, type: 'descending' });
     if (!boardTypes.has('lines-colors-unique') && new Set(dice.map((d) => d.color)).size === dice.length) add({ ...ref, type: 'colors-unique' });

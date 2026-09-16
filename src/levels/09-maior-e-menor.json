@@ -1,0 +1,108 @@
+{
+  "id": "maior-e-menor",
+  "title": "Maior e Menor",
+  "subtitle": "Com <4, tudo fica abaixo de 4; com >3, acima de 3.",
+  "intro": [
+    "values-below",
+    "values-above"
+  ],
+  "rows": 3,
+  "cols": 4,
+  "dice": [
+    "R2",
+    "R4",
+    "Y1",
+    "Y2",
+    "Y4",
+    "Y6",
+    "Y6",
+    "G3",
+    "G5",
+    "G6",
+    "G6",
+    "P5"
+  ],
+  "rules": [
+    {
+      "line": "row",
+      "index": 0,
+      "type": "color-count",
+      "color": "red",
+      "count": 1
+    },
+    {
+      "line": "row",
+      "index": 0,
+      "type": "values-unique"
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "values-above",
+      "value": 3
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "green",
+      "count": 0
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "values-above",
+      "value": 1
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "value-none",
+      "value": 1
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "sum",
+      "value": 15
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "descending"
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "values-below",
+      "value": 5
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "color-count",
+      "color": "red",
+      "count": 2
+    },
+    {
+      "type": "cell-value",
+      "row": 0,
+      "col": 3,
+      "value": 4
+    }
+  ],
+  "solution": [
+    "G3",
+    "G6",
+    "Y1",
+    "R4",
+    "Y6",
+    "P5",
+    "Y6",
+    "Y4",
+    "G6",
+    "Y2",
+    "G5",
+    "R2"
+  ]
+}

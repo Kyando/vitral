@@ -1,0 +1,167 @@
+{
+  "id": "catedral",
+  "title": "Catedral",
+  "subtitle": "Tudo o que você aprendeu, numa janela só.",
+  "intro": [],
+  "rows": 4,
+  "cols": 5,
+  "dice": [
+    "R4",
+    "R5",
+    "R5",
+    "Y2",
+    "Y3",
+    "Y3",
+    "Y4",
+    "Y5",
+    "G2",
+    "G2",
+    "G5",
+    "G6",
+    "B1",
+    "B4",
+    "B6",
+    "P1",
+    "P1",
+    "P3",
+    "P4",
+    "P6"
+  ],
+  "rules": [
+    {
+      "type": "adjacent-colors-differ"
+    },
+    {
+      "type": "lines-values-unique"
+    },
+    {
+      "line": "row",
+      "index": 0,
+      "type": "color-count",
+      "color": "green",
+      "count": 1
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "green",
+      "count": 2
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "values-below",
+      "value": 6
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "value-none",
+      "value": 2
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "color-count",
+      "color": "red",
+      "count": 2
+    },
+    {
+      "line": "row",
+      "index": 3,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 1
+    },
+    {
+      "line": "row",
+      "index": 3,
+      "type": "value-none",
+      "value": 1
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "sum",
+      "value": 13
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 0
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "value-none",
+      "value": 5
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "color-count",
+      "color": "purple",
+      "count": 1
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "ascending"
+    },
+    {
+      "line": "col",
+      "index": 4,
+      "type": "values-above",
+      "value": 1
+    },
+    {
+      "type": "cell-value",
+      "row": 1,
+      "col": 1,
+      "value": 3
+    },
+    {
+      "type": "cell-color",
+      "row": 1,
+      "col": 3,
+      "color": "blue"
+    },
+    {
+      "type": "cell-color",
+      "row": 3,
+      "col": 0,
+      "color": "purple"
+    },
+    {
+      "type": "cell-color",
+      "row": 3,
+      "col": 2,
+      "color": "yellow"
+    }
+  ],
+  "solution": [
+    "Y5",
+    "G6",
+    "Y2",
+    "P1",
+    "Y4",
+    "B1",
+    "P3",
+    "G5",
+    "B4",
+    "G2",
+    "Y3",
+    "R4",
+    "P1",
+    "R5",
+    "P6",
+    "P4",
+    "G2",
+    "Y3",
+    "B6",
+    "R5"
+  ]
+}

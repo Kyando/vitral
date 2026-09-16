@@ -40,6 +40,10 @@ export type LineRule = LineRef &
     | { type: 'colors-same' }
     /** No die in the line shows this value. */
     | { type: 'value-none'; value: number }
+    /** Every die in the line shows less than `value`. */
+    | { type: 'values-below'; value: number }
+    /** Every die in the line shows more than `value`. */
+    | { type: 'values-above'; value: number }
     | { type: 'ascending' }
     | { type: 'descending' }
     | { type: 'colors-unique' }

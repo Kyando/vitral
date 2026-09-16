@@ -101,6 +101,16 @@ describe('regras', () => {
     expect(status(rule, grid('R1', 'B3', 'G6', '.', '.', '.'))).toBe('ok');
   });
 
+  it('menor que e maior que', () => {
+    const below: Rule = { type: 'values-below', line: 'row', index: 0, value: 4 };
+    expect(status(below, grid('R3', '.', '.', '.', '.', '.'))).toBe('open');
+    expect(evaluate(shape, below, grid('R3', 'B4', '.', '.', '.', '.'))).toEqual({ status: 'broken', cells: [1] });
+    expect(status(below, grid('R3', 'B1', 'G2', '.', '.', '.'))).toBe('ok');
+    const above: Rule = { type: 'values-above', line: 'col', index: 0, value: 2 };
+    expect(status(above, grid('R2', '.', '.', '.', '.', '.'))).toBe('broken');
+    expect(status(above, grid('R3', '.', '.', 'B6', '.', '.'))).toBe('ok');
+  });
+
   it('restrição de quadro', () => {
     const rule: Rule = { type: 'cell-color', row: 1, col: 2, color: 'blue' };
     expect(status(rule, grid('.', '.', '.', '.', '.', '.'))).toBe('open');
@@ -118,6 +128,8 @@ describe('regras', () => {
       { type: 'color-count', line: 'col', index: 1, color: 'green', count: 1 },
       { type: 'colors-same', line: 'row', index: 0 },
       { type: 'value-none', line: 'col', index: 1, value: 3 },
+      { type: 'values-below', line: 'row', index: 1, value: 4 },
+      { type: 'values-above', line: 'col', index: 2, value: 2 },
       { type: 'ascending', line: 'row', index: 0 },
       { type: 'descending', line: 'col', index: 2 },
       { type: 'colors-unique', line: 'row', index: 1 },

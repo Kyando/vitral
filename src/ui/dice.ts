@@ -43,7 +43,7 @@ export interface GlyphSpec {
   color?: Color | 'any';
   /** A value 1–6, `'any'`, or undefined when the rule is about colors. */
   number?: number | 'any';
-  op?: 'different' | 'same' | 'none' | 'count' | 'up' | 'down' | 'total';
+  op?: 'different' | 'same' | 'none' | 'count' | 'up' | 'down' | 'total' | 'below' | 'above';
   /** For `count` (how many) and `total` (the sum). */
   n?: number;
 }
@@ -70,6 +70,10 @@ export function glyphSpec(rule: Rule): GlyphSpec {
       return { color: 'any', op: 'same' };
     case 'value-none':
       return { number: rule.value, op: 'none' };
+    case 'values-below':
+      return { number: 'any', op: 'below', n: rule.value };
+    case 'values-above':
+      return { number: 'any', op: 'above', n: rule.value };
     case 'ascending':
       return { number: 'any', op: 'up' };
     case 'descending':
@@ -134,12 +138,12 @@ export function glyphMarkup(g: GlyphSpec): string {
 
   if (g.op === 'different' || g.op === 'same') {
     // Three small dice: they differ (or match) in the attribute the rule is about.
-    const s = 16;
+    const s = 22;
     const colors: Color[] = g.op === 'same' ? ['blue', 'blue', 'blue'] : ['red', 'yellow', 'blue'];
     const values = g.op === 'same' ? [3, 3, 3] : [1, 2, 3];
     for (let i = 0; i < 3; i++) {
       out += g.color ? dieMark(x + s / 2, s, colors[i]) : dieMark(x + s / 2, s, undefined, values[i]);
-      x += s + 1.5;
+      x += s + 2;
     }
     x += 1;
   } else {
@@ -155,10 +159,13 @@ export function glyphMarkup(g: GlyphSpec): string {
       x += 28;
       break;
     }
-    case 'total': {
-      const label = `=${g.n}`;
-      out += text(x + label.length * 7.5, label, 23);
-      x += label.length * 15 + 2;
+    case 'total':
+    case 'below':
+    case 'above': {
+      const label = `${g.op === 'total' ? '=' : g.op === 'below' ? '&lt;' : '&gt;'}${g.n}`;
+      const chars = label.replace(/&[lg]t;/, '<').length;
+      out += text(x + chars * 7.5, label, 23);
+      x += chars * 15 + 2;
       break;
     }
     case 'up':
@@ -174,7 +181,9 @@ export function glyphMarkup(g: GlyphSpec): string {
   }
 
   const w = Math.max(x + 3, 24);
-  return `<svg class="glyph-svg" viewBox="0 0 ${w} ${H}" width="${w}" height="${H}" aria-hidden="true">${out}</svg>`;
+  const top = 5;
+  const h = H - 2 * top;
+  return `<svg class="glyph-svg" viewBox="0 ${top} ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">${out}</svg>`;
 }
 
 export function glyph(g: GlyphSpec): SVGElement {

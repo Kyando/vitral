@@ -1,0 +1,130 @@
+{
+  "id": "linhas-e-colunas",
+  "title": "Linhas e Colunas",
+  "subtitle": "Nenhum número se repete em linha nenhuma. Parece Sudoku?",
+  "intro": [
+    "lines-values-unique"
+  ],
+  "rows": 4,
+  "cols": 4,
+  "dice": [
+    "R2",
+    "R2",
+    "R4",
+    "R4",
+    "R4",
+    "R5",
+    "R6",
+    "Y1",
+    "Y1",
+    "Y3",
+    "Y6",
+    "G1",
+    "G2",
+    "G3",
+    "G3",
+    "B5"
+  ],
+  "rules": [
+    {
+      "type": "lines-values-unique"
+    },
+    {
+      "line": "row",
+      "index": 0,
+      "type": "color-count",
+      "color": "blue",
+      "count": 0
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "sum",
+      "value": 11
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "green",
+      "count": 2
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "sum",
+      "value": 15
+    },
+    {
+      "line": "row",
+      "index": 3,
+      "type": "ascending"
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "color-count",
+      "color": "green",
+      "count": 1
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "values-below",
+      "value": 5
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "value-none",
+      "value": 2
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "colors-unique"
+    },
+    {
+      "type": "cell-color",
+      "row": 1,
+      "col": 0,
+      "color": "red"
+    },
+    {
+      "type": "cell-value",
+      "row": 1,
+      "col": 3,
+      "value": 3
+    },
+    {
+      "type": "cell-color",
+      "row": 2,
+      "col": 1,
+      "color": "red"
+    },
+    {
+      "type": "cell-value",
+      "row": 3,
+      "col": 1,
+      "value": 2
+    }
+  ],
+  "solution": [
+    "R4",
+    "Y3",
+    "Y1",
+    "Y6",
+    "R2",
+    "G1",
+    "R5",
+    "G3",
+    "G3",
+    "R4",
+    "R6",
+    "R2",
+    "Y1",
+    "G2",
+    "R4",
+    "B5"
+  ]
+}

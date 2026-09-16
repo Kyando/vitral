@@ -239,13 +239,13 @@ const browser = await chromium.launch({ channel: process.env.CAPTURE_CHANNEL ?? 
 try {
   const desktop = { width: 1280, height: 820 };
 
-  const chapel = level('10-vizinhos-numeros.json');
+  const chapel = level('11-vizinhos-numeros.json');
   await screenshot(
     await open(browser, { level: chapel.id, placements: placementsOf(chapel, (cell) => cell % 3 !== 2 && cell < 12) }, desktop, { scale: 1.5 }),
     'hero-light.png',
   );
 
-  const nave = level('12-catedral.json');
+  const nave = level('13-catedral.json');
   const dark = await open(browser, { level: nave.id, theme: 'dark', placements: placementsOf(nave, (cell) => cell % 2 === 0) }, desktop, { scale: 1.5 });
   await dark.locator('.tray .piece').first().click();
   await dark.waitForTimeout(400);
@@ -258,7 +258,7 @@ try {
   );
 
   // Live validation: a nearly full board with two dice swapped.
-  const north = level('11-linhas-e-colunas.json');
+  const north = level('12-linhas-e-colunas.json');
   const broken = withMistake(north, placementsOf(north, (cell) => cell < 13));
   await screenshot(await open(browser, { level: north.id, placements: broken }, desktop, { scale: 1.5 }), 'rules.png');
 
