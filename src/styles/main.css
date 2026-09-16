@@ -26,9 +26,9 @@
   --die-purple: #8c58bb;
   --pip-light: #fffaf1;
   --pip-dark: #3b2b20;
-  /* Clear glass: uncolored panes, and the color of "any" in rule symbols */
-  --clear: #dfe3d6;
-  --clear-edge: #c9cfbf;
+  /* Clear glass: uncolored panes, and the color of "any" in rule symbols (the original cell tone) */
+  --clear: #fffaf1;
+  --clear-edge: rgb(59 43 32 / 0.2);
 
   --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
   --font-body: 'Nunito', ui-rounded, system-ui, 'Segoe UI', sans-serif;
@@ -64,8 +64,8 @@
     --die-blue: #4f8ce0;
     --die-purple: #a06fd0;
     --pip-dark: #221c16;
-    --clear: #434a48;
-    --clear-edge: #56605c;
+    --clear: #2c2836;
+    --clear-edge: rgb(241 229 207 / 0.18);
     color-scheme: dark;
   }
 }
@@ -93,8 +93,8 @@
   --die-blue: #4f8ce0;
   --die-purple: #a06fd0;
   --pip-dark: #221c16;
-  --clear: #434a48;
-  --clear-edge: #56605c;
+  --clear: #2c2836;
+  --clear-edge: rgb(241 229 207 / 0.18);
   color-scheme: dark;
 }
 
