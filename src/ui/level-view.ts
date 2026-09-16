@@ -39,6 +39,8 @@ export class LevelView {
   private readonly ruleEls: HTMLElement[][];
   /** Row/column headers and the rules they hold. */
   private readonly heads: { el: HTMLElement; rules: number[] }[] = [];
+  /** Running totals shown on sum badges: the counter and the cells it adds up. */
+  private readonly sums: { el: HTMLElement; cells: number[] }[] = [];
   private readonly undoBtn: HTMLButtonElement;
   private readonly summary: HTMLElement;
   private readonly trayScroll: HTMLElement;
@@ -168,12 +170,17 @@ export class LevelView {
     this.heads.push({ el, rules });
     if (!rules.length) return el;
 
+    const cells = lineCells(p, { line, index });
     for (const i of rules) {
       const badge = ruleBadge(p.rules[i]);
+      if (p.rules[i].type === 'sum') {
+        const counter = h('span', { class: 'sum-now', 'aria-hidden': 'true' });
+        this.sums.push({ el: counter, cells });
+        badge.append(counter);
+      }
       this.ruleEls[i].push(badge);
       el.append(badge);
     }
-    const cells = lineCells(p, { line, index });
     const focus = (on: boolean) => cells.forEach((cell) => this.cells[cell]?.classList.toggle('is-focus', on));
     el.addEventListener('pointerenter', () => focus(true));
     el.addEventListener('pointerleave', () => focus(false));
@@ -266,7 +273,7 @@ export class LevelView {
         if (target === null) this.sync(from);
         else this.moveTo(index, target === 'tray' ? null : target, from);
       },
-    });
+    }, () => piece.closest<HTMLElement>('.tray-scroll'));
     this.pieces.push(piece);
     return piece;
   }
@@ -409,6 +416,13 @@ export class LevelView {
       const states = head.rules.map((i) => verdicts[i].status);
       head.el.classList.toggle('is-ok', states.length > 0 && states.every((st) => st === 'ok'));
       head.el.classList.toggle('is-broken', states.includes('broken'));
+    }
+
+    const grid = this.s.grid();
+    for (const { el, cells } of this.sums) {
+      const dice = cells.flatMap((cell) => (grid[cell] ? [grid[cell]!.value] : []));
+      el.textContent = dice.length ? String(dice.reduce((a, b) => a + b, 0)) : '';
+      el.classList.toggle('is-shown', dice.length > 0);
     }
 
     const solved = this.s.isSolved(verdicts);

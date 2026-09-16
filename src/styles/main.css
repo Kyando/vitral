@@ -446,6 +446,35 @@ button {
   background-size: 8px;
 }
 
+/* Running total on a sum rule, in the corner opposite the stamp. */
+.sum-now {
+  position: absolute;
+  left: 3px;
+  bottom: 3px;
+  min-width: 1.5em;
+  padding: 0.1em 0.35em;
+  border-radius: 999px;
+  background: var(--stroke);
+  color: var(--panel);
+  font-size: clamp(10px, calc(var(--cell) * 0.16), 15px);
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  transform: scale(0);
+  transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.sum-now.is-shown {
+  transform: scale(1);
+}
+
+.badge.is-ok .sum-now,
+.badge.is-broken .sum-now {
+  background: var(--stamp-color);
+  color: #fff;
+}
+
 .badge.is-ok::after,
 .badge.is-broken::after,
 .cell-tag.is-ok::after,
@@ -980,11 +1009,6 @@ button {
     display: none;
   }
 
-  /* Sideways swipes scroll the strip; vertical drags lift the die. */
-  .tray .piece {
-    touch-action: pan-x;
-  }
-
   .tray-foot {
     gap: 6px;
     padding: 6px 8px 8px;
@@ -1105,10 +1129,6 @@ button {
 @media (min-width: 600px) and (min-aspect-ratio: 5/4) {
   .stage {
     --piece: 54px;
-  }
-
-  .tray .piece {
-    touch-action: pan-y;
   }
 
   .play {

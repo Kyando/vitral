@@ -47,7 +47,7 @@ There is no *Check* button: the board is validated on every move, and each rule 
 
 - **open**: nothing wrong yet;
 - ✅ **satisfied**: its row/column/cell (or the whole board) is complete and correct;
-- ❌ **broken**: the dice already placed make it impossible, whatever goes in the empty cells (a row already above its sum, two red neighbours, a 6 at the start of an increasing row). The dice at fault are outlined in red.
+- ❌ **broken**: the dice already placed make it impossible, whatever goes in the empty cells (a row that already went past its sum, two red neighbours, two dice out of order in an increasing row). Sums and order only break on what you can see: a single die never breaks them. The dice at fault are outlined in red.
 
 Feedback never peeks at the intended solution or at the dice still in the tray, so it only tells you what you could have worked out yourself. The window is complete when the board is full and every rule is satisfied: *any* arrangement that satisfies the rules wins.
 

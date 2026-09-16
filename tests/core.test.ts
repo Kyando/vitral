@@ -9,6 +9,7 @@ import type { LevelDef, Rule } from '../src/core/types.ts';
 const levels = import.meta.glob<LevelDef>('../src/levels/*.json', { eager: true, import: 'default' });
 
 const shape = { nRows: 2, nCols: 3 };
+const LENIENT = new Set<Rule['type']>(['sum', 'ascending', 'descending']);
 /** Builds a 2×3 grid from codes, "." for empty cells. */
 const grid = (...codes: string[]): Grid => codes.map((c) => (c === '.' ? null : parseDie(c)));
 const status = (rule: Rule, g: Grid) => evaluate(shape, rule, g).status;
@@ -76,11 +77,12 @@ describe('regras', () => {
     expect(status(rule, grid('R1', 'R2', 'R3', 'B2', 'B3', 'B1'))).toBe('ok');
   });
 
-  it('soma quebra assim que fica impossível, e só fica ok completa', () => {
+  it('soma quebra ao passar do total, e só fica ok completa', () => {
     const rule: Rule = { type: 'sum', line: 'row', index: 0, value: 12 };
     expect(status(rule, grid('R6', '.', '.', '.', '.', '.'))).toBe('open');
-    expect(status(rule, grid('R1', 'R1', '.', '.', '.', '.'))).toBe('broken'); // 1 + 1 + 6 < 12
-    expect(status(rule, grid('R6', 'R6', '.', '.', '.', '.'))).toBe('broken'); // 6 + 6 + 1 > 12
+    expect(status(rule, grid('R1', 'R1', '.', '.', '.', '.'))).toBe('open'); // short, but only a full line can be short
+    expect(status(rule, grid('R6', 'R6', '.', '.', '.', '.'))).toBe('broken'); // total reached with a die still to place
+    expect(status(rule, grid('R6', 'R4', 'B1', '.', '.', '.'))).toBe('broken');
     expect(status(rule, grid('R6', 'R5', 'B1', '.', '.', '.'))).toBe('ok');
   });
 
@@ -93,11 +95,12 @@ describe('regras', () => {
     expect(status(two, grid('R1', '.', '.', 'R4', '.', '.'))).toBe('ok');
   });
 
-  it('crescente considera o espaço que sobra para os próximos dados', () => {
+  it('crescente só quebra com dois dados fora de ordem', () => {
     const rule: Rule = { type: 'ascending', line: 'row', index: 0 };
-    expect(status(rule, grid('.', '.', 'R2', '.', '.', '.'))).toBe('broken'); // needs two smaller values before it
-    expect(status(rule, grid('R6', '.', '.', '.', '.', '.'))).toBe('broken');
-    expect(status(rule, grid('R3', '.', 'B4', '.', '.', '.'))).toBe('broken'); // no room for a value between
+    expect(status(rule, grid('.', '.', 'R2', '.', '.', '.'))).toBe('open');
+    expect(status(rule, grid('R6', '.', '.', '.', '.', '.'))).toBe('open');
+    expect(status(rule, grid('R3', '.', 'B4', '.', '.', '.'))).toBe('open');
+    expect(evaluate(shape, rule, grid('R4', '.', 'B4', '.', '.', '.'))).toEqual({ status: 'broken', cells: [0, 2] });
     expect(status(rule, grid('R1', 'B3', 'G6', '.', '.', '.'))).toBe('ok');
   });
 
@@ -118,7 +121,7 @@ describe('regras', () => {
     expect(status(rule, grid('.', '.', '.', '.', '.', 'B3'))).toBe('ok');
   });
 
-  it('a checagem compilada do solver concorda com a avaliação da interface', () => {
+  it('a checagem compilada do solver concorda com a avaliação da interface (ou é mais rígida)', () => {
     const rules: Rule[] = [
       { type: 'adjacent-colors-differ' },
       { type: 'adjacent-values-differ' },
@@ -147,9 +150,14 @@ describe('regras', () => {
         g[cell] = parseDie(codes[Math.floor(rand() * codes.length)]);
         rules.forEach((rule, i) => {
           if (before[i] === 'broken' || !cellsOfRule(shape, rule).includes(cell)) return;
-          expect(compileRule(shape, rule)(g, cell), `${rule.type} em ${g.map((d) => (d ? dieCode(d) : '.')).join(' ')}`).toBe(
-            evaluate(shape, rule, g).status === 'broken',
-          );
+          const compiled = compileRule(shape, rule)(g, cell);
+          const broken = evaluate(shape, rule, g).status === 'broken';
+          const label = `${rule.type} em ${g.map((d) => (d ? dieCode(d) : '.')).join(' ')}`;
+          // Sums and order: the UI is lenient mid-line, the solver may prune earlier.
+          if (LENIENT.has(rule.type)) {
+            if (broken) expect(compiled, label).toBe(true);
+            if (g.every((d, k) => d || !cellsOfRule(shape, rule).includes(k))) expect(compiled, label).toBe(broken);
+          } else expect(compiled, label).toBe(broken);
         });
       }
     }

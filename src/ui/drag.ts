@@ -7,35 +7,68 @@ export interface DragHandlers {
 }
 
 const DRAG_THRESHOLD = 6;
+/** How far a scrolling finger must stray across the strip before it picks the die up instead. */
+const LIFT_DISTANCE = 14;
 
-/** Pointer-based drag (mouse, touch and pen) with a floating ghost; short presses count as taps. */
-export function makeDraggable(el: HTMLElement, handlers: DragHandlers): void {
+/**
+ * Pointer-based drag (mouse, touch and pen) with a floating ghost; short presses count as taps.
+ * The page never takes over the gesture (the pieces use `touch-action: none`), so a drag can go in
+ * any direction. On touch, a die inside `scroller` that starts moving along the strip scrolls it by
+ * hand, and turns into a drag as soon as the finger heads across or leaves the strip.
+ */
+export function makeDraggable(el: HTMLElement, handlers: DragHandlers, scroller?: () => HTMLElement | null): void {
   el.addEventListener('pointerdown', (down) => {
     if (down.button !== 0) return;
     down.preventDefault();
-    const rect = el.getBoundingClientRect();
-    const offsetX = down.clientX - rect.left;
-    const offsetY = down.clientY - rect.top;
+    let offsetX = 0;
+    let offsetY = 0;
     let ghost: HTMLElement | null = null;
+    let mode: 'press' | 'scroll' | 'drag' = 'press';
+    let last = { x: down.clientX, y: down.clientY };
     el.setPointerCapture(down.pointerId);
 
-    const place = (e: PointerEvent) => {
-      ghost!.style.transform = `translate(${e.clientX - offsetX}px, ${e.clientY - offsetY}px)`;
+    const strip = down.pointerType === 'mouse' ? null : (scroller?.() ?? null);
+    const axis = strip && strip.scrollWidth > strip.clientWidth + 1 ? 'x' : strip && strip.scrollHeight > strip.clientHeight + 1 ? 'y' : null;
+
+    const lift = () => {
+      const rect = el.getBoundingClientRect();
+      offsetX = Math.min(Math.max(last.x - rect.left, 0), rect.width);
+      offsetY = Math.min(Math.max(last.y - rect.top, 0), rect.height);
+      ghost = el.cloneNode(true) as HTMLElement;
+      ghost.classList.add('ghost');
+      ghost.classList.remove('is-selected', 'pop', 'nudge');
+      ghost.style.width = `${rect.width}px`;
+      ghost.style.height = `${rect.height}px`;
+      document.body.append(ghost);
+      el.classList.add('is-lifted');
+      mode = 'drag';
+      handlers.onStart();
     };
 
     const move = (e: PointerEvent) => {
-      if (!ghost) {
-        if (Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) < DRAG_THRESHOLD) return;
-        ghost = el.cloneNode(true) as HTMLElement;
-        ghost.classList.add('ghost');
-        ghost.classList.remove('is-selected', 'pop', 'nudge');
-        ghost.style.width = `${rect.width}px`;
-        ghost.style.height = `${rect.height}px`;
-        document.body.append(ghost);
-        el.classList.add('is-lifted');
-        handlers.onStart();
+      const dx = e.clientX - down.clientX;
+      const dy = e.clientY - down.clientY;
+      if (mode === 'press') {
+        if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+        const along = axis === 'x' ? Math.abs(dx) > Math.abs(dy) * 1.2 : axis === 'y' && Math.abs(dy) > Math.abs(dx) * 1.2;
+        if (along) mode = 'scroll';
+        else lift();
       }
-      place(e);
+      if (mode === 'scroll' && strip) {
+        const box = strip.getBoundingClientRect();
+        const across = axis === 'x' ? Math.abs(dy) : Math.abs(dx);
+        const outside = e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom;
+        if (across < LIFT_DISTANCE && !outside) {
+          if (axis === 'x') strip.scrollLeft -= e.clientX - last.x;
+          else strip.scrollTop -= e.clientY - last.y;
+          last = { x: e.clientX, y: e.clientY };
+          return;
+        }
+        last = { x: e.clientX, y: e.clientY };
+        lift();
+      }
+      last = { x: e.clientX, y: e.clientY };
+      ghost!.style.transform = `translate(${e.clientX - offsetX}px, ${e.clientY - offsetY}px)`;
       handlers.onMove(e.clientX, e.clientY);
     };
 
@@ -44,7 +77,7 @@ export function makeDraggable(el: HTMLElement, handlers: DragHandlers): void {
       el.removeEventListener('pointerup', up);
       el.removeEventListener('pointercancel', cancel);
       if (!ghost) {
-        if (!cancelled) handlers.onTap();
+        if (!cancelled && mode === 'press') handlers.onTap();
         return;
       }
       const ghostRect = ghost.getBoundingClientRect();

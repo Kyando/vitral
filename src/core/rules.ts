@@ -5,7 +5,9 @@ import type { Die, LineRef, Rule } from './types.ts';
  *
  * Feedback never looks at the intended solution or at the dice still in the tray: a rule is
  * `broken` only when the dice already placed make it impossible to satisfy, whatever the empty
- * cells receive. That keeps it honest for the player and sound for the solver's pruning.
+ * cells receive. Sums and order are judged the way a player reads them (an overshoot, two dice
+ * out of order), not by what the remaining cells could still reach: a single die never breaks them.
+ * The solver's compiled checks stay strict, which is still sound for its pruning.
  */
 
 export type Status = 'open' | 'ok' | 'broken';
@@ -120,8 +122,8 @@ export function evaluate(s: Shape, rule: Rule, grid: Grid): Verdict {
   switch (rule.type) {
     case 'sum': {
       const sum = placed.reduce((acc, cell) => acc + die(cell).value, 0);
-      const reachable = sum + empty <= rule.value && sum + empty * 6 >= rule.value;
-      return verdict(reachable ? [] : placed, complete);
+      const fits = complete ? sum === rule.value : sum < rule.value;
+      return verdict(fits ? [] : placed, complete);
     }
 
     case 'color-count': {
@@ -147,18 +149,14 @@ export function evaluate(s: Shape, rule: Rule, grid: Grid): Verdict {
 
     case 'ascending':
     case 'descending': {
-      // Strictly monotonic: positions i < j need a gap of at least j - i between their values.
-      const n = cells.length;
+      // Strictly monotonic: any two placed dice out of order (or equal) break it.
       const rank = (i: number) => (rule.type === 'ascending' ? die(cells[i]).value : 7 - die(cells[i]).value);
       const filled = cells.map((cell, i) => (grid[cell] ? i : -1)).filter((i) => i >= 0);
       const bad: number[] = [];
-      for (const i of filled) {
-        if (rank(i) < i + 1 || rank(i) > 6 - (n - 1 - i)) bad.push(cells[i]);
-      }
       for (let a = 0; a < filled.length; a++) {
         for (let b = a + 1; b < filled.length; b++) {
           const [i, j] = [filled[a], filled[b]];
-          if (rank(j) - rank(i) < j - i) bad.push(cells[i], cells[j]);
+          if (rank(j) <= rank(i)) bad.push(cells[i], cells[j]);
         }
       }
       return verdict(bad, complete);
@@ -175,7 +173,8 @@ export function evaluate(s: Shape, rule: Rule, grid: Grid): Verdict {
 /**
  * Placement check for search: `(grid, cell) => true` when the die just placed in `cell` breaks the rule.
  * It assumes `cell` is in the rule's scope and the board was not already breaking it,
- * so it only looks at what that die changes.
+ * so it only looks at what that die changes. It flags everything `evaluate` flags, and for sums
+ * and order also what the empty cells can no longer reach.
  * Allocation-free: the solver calls it millions of times.
  */
 export type BreakCheck = (grid: Grid, cell: number) => boolean;
