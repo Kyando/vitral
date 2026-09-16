@@ -310,8 +310,8 @@ button {
 
 .board {
   display: grid;
-  grid-template-columns: var(--head-w, calc(var(--cell) * 0.78)) repeat(var(--cols), var(--cell));
-  grid-template-rows: var(--head-h, calc(var(--cell) * 0.78)) repeat(var(--rows), var(--cell));
+  grid-template-columns: repeat(var(--tracks-x), var(--cell));
+  grid-template-rows: repeat(var(--tracks-y), var(--cell));
   gap: var(--gap);
 }
 
@@ -326,58 +326,71 @@ button {
   font-size: calc(var(--cell) * 0.22);
 }
 
-/* Row / column headers holding the line rules */
+/* Row / column headers: a cell-sized box, like the cells it describes. Two rules split it in halves. */
 .head {
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: calc(var(--cell) * 0.06);
-  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel-2);
+  border: 3px solid var(--stroke);
+  box-shadow: 0 4px 0 var(--stroke);
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: transform 0.15s, border-color 0.2s;
 }
 
 .head.is-empty {
   cursor: default;
-  border: 2px dashed var(--faint);
+  background: transparent;
+  border: 3px dashed var(--faint);
+  box-shadow: none;
 }
 
-.head--col {
-  height: var(--head-h, calc(var(--cell) * 0.78));
-  justify-content: flex-end;
-  padding: 7px 0 3px;
+.head.is-ok {
+  border-color: var(--ok);
 }
 
-/* Two rules share the header height instead of overflowing it. */
-.head--col .badge {
-  flex: 0 1 calc((var(--head-h, calc(var(--cell) * 0.78)) - 16px) / 2);
-}
-
-.head--row {
-  padding-right: 2px;
+.head.is-broken {
+  border-color: var(--danger);
 }
 
 @media (hover: hover) {
   .head:not(.is-empty):hover {
-    transform: scale(1.04);
+    transform: translateY(-2px);
   }
 }
 
+/* One rule slot inside a header */
 .badge {
   position: relative;
-  flex: 0 1 max(34px, calc(var(--cell) * 0.44));
+  flex: 1 1 0;
   min-height: 0;
   display: grid;
   place-items: center;
-  padding: 2px 4px;
-  background: var(--panel-2);
-  border: 2.5px solid var(--stroke);
-  border-radius: 10px;
-  box-shadow: 0 3px 0 var(--stroke);
+  padding: 5% 7%;
   font-size: clamp(14px, calc(var(--cell) * 0.24), 24px);
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s;
+}
+
+.badge + .badge {
+  border-top: 2px dashed var(--faint);
+}
+
+.head .glyph {
+  width: 100%;
+  height: 100%;
+}
+
+/* The glyph scales to fill its slot, whatever the cell size. */
+.head .glyph-svg {
+  width: 100%;
+  height: 100%;
+  max-height: calc(var(--cell) * 0.5);
+}
+
+.head.is-split .glyph-svg {
+  max-height: calc(var(--cell) * 0.4);
 }
 
 /* Status: a small stamp in the corner */
@@ -407,16 +420,23 @@ button {
 }
 
 .badge.is-ok,
-.badge.is-broken,
+.badge.is-broken {
+  background: color-mix(in srgb, var(--stamp-color) 20%, var(--panel));
+}
+
 .cell-tag.is-ok,
 .cell-tag.is-broken {
   border-color: var(--stamp-color);
   background: color-mix(in srgb, var(--stamp-color) 20%, var(--panel));
 }
 
-.badge.is-ok,
-.badge.is-broken {
-  box-shadow: 0 3px 0 var(--stamp-color);
+/* Inside a header the stamp sits in the slot's corner. */
+.badge::after {
+  top: 3px;
+  right: 3px;
+  width: 14px;
+  height: 14px;
+  background-size: 8px;
 }
 
 .badge.is-ok::after,
@@ -1217,6 +1237,29 @@ button {
 
 .ex-head .badge {
   flex: 1;
+}
+
+/* Stand-alone rule badges (help screen) keep a card look. */
+.ex-head .badge,
+.legend-item .badge {
+  padding: 2px 4px;
+  background: var(--panel-2);
+  border: 2.5px solid var(--stroke);
+  border-radius: 10px;
+  box-shadow: 0 3px 0 var(--stroke);
+}
+
+.legend-item .badge.is-ok,
+.legend-item .badge.is-broken {
+  border-color: var(--stamp-color);
+}
+
+.legend-item .badge::after {
+  top: -7px;
+  right: -7px;
+  width: 16px;
+  height: 16px;
+  background-size: 10px;
 }
 
 .ex-die {

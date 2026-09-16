@@ -21,10 +21,6 @@ export interface LevelViewOptions {
 
 type DropTarget = number | 'tray' | null;
 
-const HEADER_RATIO = 0.78;
-/** Smallest header sizes (px): a row header fits one badge's width, a column header fits its stacked badges. */
-const HEAD_MIN_WIDTH = 60;
-const HEAD_MIN_HEIGHT = [30, 42, 84];
 const RADII = ['12px 9px 13px 10px', '9px 13px 10px 12px', '13px 10px 9px 12px', '10px 12px 12px 9px'];
 const STATUS_ICON: Record<Status, string> = { open: '', ok: ICONS.check, broken: ICONS.close };
 
@@ -84,8 +80,9 @@ export class LevelView {
 
     // Board: column rules on top, row rules on the left, window restrictions printed on cells.
     this.board = h('div', { class: 'board', 'aria-label': 'Vitral' });
-    this.board.style.setProperty('--rows', String(p.nRows));
-    this.board.style.setProperty('--cols', String(p.nCols));
+    // Headers are one more cell on each axis.
+    this.board.style.setProperty('--tracks-y', String(p.nRows + 1));
+    this.board.style.setProperty('--tracks-x', String(p.nCols + 1));
     this.board.append(h('div', { class: 'corner', 'aria-hidden': 'true' }, '✦'));
     for (let c = 0; c < p.nCols; c++) this.board.append(this.makeHead('col', c));
     for (let r = 0; r < p.nRows; r++) {
@@ -162,7 +159,8 @@ export class LevelView {
     const rules = p.rules.flatMap((rule, i) => ('line' in rule && rule.line === line && rule.index === index ? [i] : []));
     const text = rules.map((i) => describeRule(p.rules[i])).join(' · ');
     const el = h('div', {
-      class: `head head--${line}${rules.length ? '' : ' is-empty'}`,
+      class: `head head--${line}${rules.length ? '' : ' is-empty'}${rules.length > 1 ? ' is-split' : ''}`,
+      style: `border-radius: ${RADII[(index * 2 + (line === 'row' ? 1 : 0)) % RADII.length]}`,
       role: rules.length ? 'button' : undefined,
       tabindex: rules.length ? 0 : undefined,
       'aria-label': text || `${line === 'row' ? 'Linha' : 'Coluna'} ${index + 1}: sem regra`,
@@ -451,23 +449,15 @@ export class LevelView {
     );
   }
 
-  /** Sizes cells and headers to the space available. */
+  /** Sizes cells to the space available. Headers are one more cell on each axis. */
   private fit(): void {
     const p = this.s.puzzle;
     const { width, height } = this.boardWrap.getBoundingClientRect();
     const gap = width < 480 ? 5 : 8;
-    const colRules = Math.max(0, ...this.heads.filter((hd) => hd.el.classList.contains('head--col')).map((hd) => hd.rules.length));
-    const headHeight = HEAD_MIN_HEIGHT[Math.min(colRules, 2)];
-    // Cell size along one axis, with the header proportional to the cell but never below its floor.
-    const along = (space: number, n: number, headMin: number) => {
-      const proportional = (space - gap * n) / (n + HEADER_RATIO);
-      return proportional * HEADER_RATIO >= headMin ? proportional : (space - gap * n - headMin) / n;
-    };
-    const size = Math.max(34, Math.min(120, Math.floor(Math.min(along(width, p.nCols, HEAD_MIN_WIDTH), along(height, p.nRows, headHeight)))));
+    const along = (space: number, n: number) => (space - gap * n) / (n + 1);
+    const size = Math.max(34, Math.min(120, Math.floor(Math.min(along(width, p.nCols), along(height, p.nRows)))));
     this.el.style.setProperty('--cell', `${size}px`);
     this.el.style.setProperty('--gap', `${gap}px`);
-    this.el.style.setProperty('--head-w', `${Math.max(size * HEADER_RATIO, HEAD_MIN_WIDTH)}px`);
-    this.el.style.setProperty('--head-h', `${Math.max(size * HEADER_RATIO, headHeight)}px`);
     this.trayScroll.classList.toggle('is-scrollable', this.trayScroll.scrollWidth > this.trayScroll.clientWidth + 1);
   }
 }
