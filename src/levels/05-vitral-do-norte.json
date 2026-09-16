@@ -1,0 +1,100 @@
+{
+  "id": "vitral-do-norte",
+  "title": "Vitral do Norte",
+  "subtitle": "Cada linha e coluna com cores únicas, e vizinhos com valores diferentes.",
+  "rows": 4,
+  "cols": 4,
+  "dice": [
+    "R1",
+    "R2",
+    "R2",
+    "Y4",
+    "Y5",
+    "Y5",
+    "G4",
+    "G4",
+    "G5",
+    "G5",
+    "B1",
+    "B1",
+    "B4",
+    "P1",
+    "P5",
+    "P5"
+  ],
+  "rules": [
+    {
+      "type": "lines-colors-unique"
+    },
+    {
+      "type": "adjacent-values-differ"
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "ascending"
+    },
+    {
+      "line": "row",
+      "index": 3,
+      "type": "sum",
+      "value": 12
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "parity",
+      "parity": "odd"
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "sum",
+      "value": 15
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "sum",
+      "value": 15
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "color-count",
+      "color": "blue",
+      "count": 0
+    },
+    {
+      "line": "col",
+      "index": 3,
+      "type": "color-count",
+      "color": "purple",
+      "count": 0
+    },
+    {
+      "type": "cell-color",
+      "row": 2,
+      "col": 2,
+      "color": "yellow"
+    }
+  ],
+  "solution": [
+    "B1",
+    "P5",
+    "G4",
+    "Y5",
+    "G5",
+    "B4",
+    "P5",
+    "R1",
+    "P1",
+    "R2",
+    "Y4",
+    "G5",
+    "Y5",
+    "G4",
+    "R2",
+    "B1"
+  ]
+}

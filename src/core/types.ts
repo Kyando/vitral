@@ -1,31 +1,68 @@
 /**
  * Level data format (the JSON files in src/levels).
- * This is the single source of truth shared by the web game and future exporters (PDF, Godot...).
+ * This is the single source of truth shared by the web game, the generator and future exporters.
  */
 
-export interface WordDef {
-  id: string;
-  label: string;
-  /** An emoji, or a path to an image asset (.svg/.png/.webp) under public/. */
-  icon: string;
+export const COLORS = ['red', 'yellow', 'green', 'blue', 'purple'] as const;
+export type Color = (typeof COLORS)[number];
+
+/** One letter per color, used in die codes such as "R3" (red three). */
+export const COLOR_CODE: Record<Color, string> = { red: 'R', yellow: 'Y', green: 'G', blue: 'B', purple: 'P' };
+
+export interface Die {
+  color: Color;
+  /** 1 to 6 */
+  value: number;
 }
 
-export interface ClueDef extends WordDef {
-  /** Cells where this clue plausibly fits, as "rowId+colId". */
-  candidates: string[];
+// ── Rules ──────────────────────────────────────────────────────────────────
+
+/** Rules that apply to the whole board. */
+export type BoardRule =
+  | { type: 'adjacent-colors-differ' }
+  | { type: 'adjacent-values-differ' }
+  | { type: 'lines-colors-unique' }
+  | { type: 'lines-values-unique' };
+
+export interface LineRef {
+  line: 'row' | 'col';
+  /** 0-based row or column index. */
+  index: number;
 }
 
-/** Which line counts are printed on the board. */
-export type CountsMode = 'none' | 'rows' | 'cols' | 'both';
+/** Rules printed on a row or column header. Rows read left→right, columns top→bottom. */
+export type LineRule = LineRef &
+  (
+    | { type: 'sum'; value: number }
+    /** Exactly `count` dice of that color (0 means "no dice of that color"). */
+    | { type: 'color-count'; color: Color; count: number }
+    | { type: 'parity'; parity: 'even' | 'odd' }
+    | { type: 'ascending' }
+    | { type: 'descending' }
+    | { type: 'colors-unique' }
+    | { type: 'values-unique' }
+  );
+
+export interface CellRef {
+  row: number;
+  col: number;
+}
+
+/** Sagrada-style window restrictions printed on a single cell. */
+export type CellRule = CellRef & ({ type: 'cell-color'; color: Color } | { type: 'cell-value'; value: number });
+
+export type Rule = BoardRule | LineRule | CellRule;
+export type RuleType = Rule['type'];
 
 export interface LevelDef {
   id: string;
   title: string;
   subtitle?: string;
-  rows: WordDef[];
-  cols: WordDef[];
-  clues: ClueDef[];
-  /** clueId -> "rowId+colId" */
-  solution: Record<string, string>;
-  counts?: CountsMode;
+  rows: number;
+  cols: number;
+  /** Die codes ("R3", "B5"...). Exactly one die per cell: the board is always full. */
+  dice: string[];
+  rules: Rule[];
+  /** The intended solution, as die codes in reading order (row by row). */
+  solution: string[];
 }

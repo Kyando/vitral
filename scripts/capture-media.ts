@@ -4,12 +4,14 @@
  * Drives the locally installed Microsoft Edge through playwright-core (no browser download).
  * Set CAPTURE_CHANNEL=chrome to use Google Chrome instead.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import gifenc from 'gifenc';
 import pngjs from 'pngjs';
 import { chromium, type Browser, type Page } from 'playwright-core';
 import { preview } from 'vite';
+import type { LevelDef } from '../src/core/types.ts';
+import { SAVE_KEY } from '../src/game/save.ts';
 
 const { GIFEncoder, quantize, applyPalette } = gifenc;
 const { PNG } = pngjs;
@@ -22,8 +24,8 @@ const BASE_URL = `http://localhost:${PORT}/`;
 interface Setup {
   level: string;
   theme?: 'light' | 'dark';
+  /** die index -> "row,col" */
   placements?: Record<string, string>;
-  notes?: Record<string, string[]>;
 }
 
 interface Point {
@@ -34,9 +36,7 @@ interface Point {
 const saveData = (setup: Setup): string =>
   JSON.stringify({
     version: 1,
-    levels: {
-      [setup.level]: { placements: setup.placements ?? {}, notes: setup.notes ?? {}, done: false, checks: 0, hints: 0, moves: 0 },
-    },
+    levels: { [setup.level]: { placements: setup.placements ?? {}, done: false, moves: 0 } },
     settings: { theme: setup.theme ?? 'light', sound: false, seenHelp: true, lastLevel: setup.level },
   });
 
@@ -73,10 +73,12 @@ async function open(
         sessionStorage.setItem('seeded', '1');
       }
     },
-    { key: 'inklink:v1', data: saveData(setup) },
+    { key: SAVE_KEY, data: saveData(setup) },
   );
   if (cursor) await context.addInitScript(CURSOR_SCRIPT);
   const page = await context.newPage();
+  page.on('pageerror', (err) => console.error('  erro na página:', err.message));
+  page.on('console', (msg) => msg.type() === 'error' && console.error('  console:', msg.text()));
   await page.goto(BASE_URL);
   await page.waitForSelector('.board .cell');
   await page.evaluate(() => document.fonts.ready);
@@ -151,17 +153,41 @@ class GifRecorder {
   }
 }
 
+const level = (file: string): LevelDef => JSON.parse(readFileSync(join(root, 'src/levels', file), 'utf8')) as LevelDef;
+
+/** Die index for each solution cell (identical dice are matched in order). */
+function solutionDice(def: LevelDef): number[] {
+  const used = new Set<number>();
+  return def.solution.map((code) => {
+    const die = def.dice.findIndex((d, i) => d === code && !used.has(i));
+    used.add(die);
+    return die;
+  });
+}
+
+const key = (def: LevelDef, cell: number) => `${Math.floor(cell / def.cols)},${cell % def.cols}`;
+
+/** The solution, keeping only the cells `keep` accepts. */
+function placementsOf(def: LevelDef, keep: (cell: number) => boolean): Record<string, string> {
+  return Object.fromEntries(solutionDice(def).flatMap((die, cell) => (keep(cell) ? [[String(die), key(def, cell)]] : [])));
+}
+
+/** Two dice of different colors swapped: a board that breaks some rules. */
+function withMistake(def: LevelDef, placements: Record<string, string>): Record<string, string> {
+  const dice = solutionDice(def);
+  const a = dice.findIndex((die) => String(die) in placements);
+  const b = dice.findIndex((die, cell) => String(die) in placements && def.solution[cell][0] !== def.solution[a][0] && cell !== a);
+  return { ...placements, [dice[a]]: key(def, b), [dice[b]]: key(def, a) };
+}
+
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 
 async function recordDragGif(browser: Browser): Promise<void> {
-  const page = await open(
-    browser,
-    { level: 'tesouros', placements: { bau: 'pirata+tesouro', xis: 'pirata+mapa', bussola: 'pirata+estrela' } },
-    { width: 960, height: 620 },
-    { cursor: true },
-  );
+  const def = level('01-primeira-janela.json');
+  const dice = solutionDice(def);
+  const page = await open(browser, { level: def.id, placements: placementsOf(def, (cell) => cell < 4) }, { width: 960, height: 640 }, { cursor: true });
   const rec = new GifRecorder(page);
-  let pos: Point = { x: 820, y: 520 };
+  let pos: Point = { x: 820, y: 560 };
 
   const center = async (selector: string): Promise<Point> => {
     const box = (await page.locator(selector).boundingBox())!;
@@ -176,86 +202,63 @@ async function recordDragGif(browser: Browser): Promise<void> {
       await rec.snap();
     }
   };
+  const drag = async (die: number, cell: number) => {
+    await glide(await center(`.piece[data-die="${die}"]`), 7);
+    await page.mouse.down();
+    await rec.snap();
+    await glide(await center(`.cell[data-cell="${cell}"]`), 12);
+    await page.mouse.up();
+    for (let i = 0; i < 5; i++) await rec.snap();
+    await rec.pause(250);
+  };
 
   await page.mouse.move(pos.x, pos.y);
   await rec.pause(700);
 
-  const moves: [string, string][] = [
-    ['Meteorito', 'Astronauta com Tesouro'],
-    ['Satélite', 'Astronauta com Mapa'],
-    ['Constelação', 'Astronauta com Estrela'],
-  ];
-  for (const [piece, cell] of moves) {
-    await glide(await center(`.piece[aria-label="${piece}"]`), 7);
-    await page.mouse.down();
-    await rec.snap();
-    await glide(await center(`.cell[aria-label="${cell}"]`), 12);
-    await page.mouse.up();
-    for (let i = 0; i < 5; i++) await rec.snap();
-    await rec.pause(250);
+  // A mistake first, so the rules light up red, then the fix.
+  const [c4, c5] = [4, 5];
+  await drag(dice[c5], c4);
+  await rec.pause(900);
+  await drag(dice[c5], c5);
+  for (let cell = 4; cell < def.solution.length; cell++) {
+    if (cell !== c5) await drag(dice[cell], cell);
   }
-
-  await glide(await center('.btn--primary'), 9);
-  await page.mouse.down();
-  await page.mouse.up();
   for (let i = 0; i < 14; i++) await rec.snap();
   await page.waitForSelector('.modal--win');
-  await rec.pause(600);
+  await rec.pause(700);
   rec.save(join(outDir, 'drag-and-drop.gif'), 3000);
   await page.context().close();
 }
-
-const museumProgress: Setup = {
-  level: 'museu',
-  placements: {
-    moldura: 'pintor+museu',
-    estrelas: 'pintor+noite',
-    ambar: 'pintor+ouro',
-    roubo: 'detetive+ouro',
-    meteoro: 'dinossauro+noite',
-    mumia: 'farao+noite',
-  },
-  notes: { 'detetive+deserto': ['pegadas', 'miragem'], 'farao+deserto': ['miragem', 'escaravelho'] },
-};
 
 mkdirSync(outDir, { recursive: true });
 const server = await preview({ root, logLevel: 'warn', preview: { port: PORT, strictPort: true } });
 const browser = await chromium.launch({ channel: process.env.CAPTURE_CHANNEL ?? 'msedge' });
 
 try {
-  const desktop = { width: 1280, height: 800 };
+  const desktop = { width: 1280, height: 820 };
 
-  await screenshot(await open(browser, museumProgress, desktop, { scale: 1.5 }), 'hero-light.png');
-
-  const dark = await open(
-    browser,
-    {
-      level: 'era-uma-vez',
-      theme: 'dark',
-      placements: { lobisomem: 'lobo+lua', doces: 'bruxa+floresta', cacador: 'princesa+floresta', veneno: 'bruxa+maca' },
-    },
-    desktop,
-    { scale: 1.5 },
+  const chapel = level('04-capela.json');
+  await screenshot(
+    await open(browser, { level: chapel.id, placements: placementsOf(chapel, (cell) => cell % 3 !== 2 && cell < 12) }, desktop, { scale: 1.5 }),
+    'hero-light.png',
   );
-  await dark.locator('.piece[aria-label="Uivo"]').click();
+
+  const nave = level('06-nave-central.json');
+  const dark = await open(browser, { level: nave.id, theme: 'dark', placements: placementsOf(nave, (cell) => cell % 2 === 0) }, desktop, { scale: 1.5 });
+  await dark.locator('.tray .piece').first().click();
   await dark.waitForTimeout(400);
   await screenshot(dark, 'dark.png');
 
+  const skylight = level('03-claraboia.json');
   await screenshot(
-    await open(
-      browser,
-      { level: 'fazenda', placements: { ninho: 'galinha+fazendeiro', ferroada: 'abelha+fazendeiro', leite: 'vaca+cafe' } },
-      { width: 390, height: 844 },
-      { scale: 2, mobile: true },
-    ),
+    await open(browser, { level: skylight.id, placements: placementsOf(skylight, (cell) => cell < 5) }, { width: 390, height: 844 }, { scale: 2, mobile: true }),
     'mobile.png',
   );
 
-  const hint = await open(browser, museumProgress, desktop, { scale: 1.5 });
-  await hint.getByRole('button', { name: 'Dica' }).click();
-  await hint.waitForSelector('.modal--hint');
-  await hint.waitForTimeout(500);
-  await screenshot(hint, 'hint.png');
+  // Live validation: a nearly full board with two dice swapped.
+  const north = level('05-vitral-do-norte.json');
+  const broken = withMistake(north, placementsOf(north, (cell) => cell < 13));
+  await screenshot(await open(browser, { level: north.id, placements: broken }, desktop, { scale: 1.5 }), 'rules.png');
 
   await recordDragGif(browser);
 } finally {

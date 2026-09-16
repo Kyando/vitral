@@ -1,76 +1,102 @@
-import { bit, cellsOf, linesOfCell, type Puzzle } from './puzzle.ts';
+import { dieCode } from './puzzle.ts';
+import { compileRule } from './rules.ts';
+import type { Die, Rule } from './types.ts';
+
+export interface SolveInput {
+  nRows: number;
+  nCols: number;
+  dice: Die[];
+  rules: Rule[];
+  rulesByCell: number[][];
+}
 
 export interface SolveResult {
   count: number;
-  /** Each solution is a cell per clue. */
-  solutions: number[][];
+  /** Each solution is a die per cell. Identical dice are interchangeable, so they count once. */
+  solutions: Die[][];
+  /** Search nodes where more than one die could go in the chosen cell: a proxy for difficulty. */
+  branches: number;
+  /** True when the search gave up at `nodeLimit`: the count is then a lower bound. */
+  aborted: boolean;
 }
 
-/** Exhaustive backtracking search. Stops after `limit` solutions (2 is enough to test uniqueness). */
-export function findSolutions(p: Puzzle, limit = 2): SolveResult {
-  const assign = new Array<number>(p.nClues).fill(-1);
-  const used = new Array<number>(p.lines.length).fill(0);
-  const solutions: number[][] = [];
-  let taken = 0;
-
-  const isFree = (cell: number): boolean => {
-    if (taken & bit(cell)) return false;
-    for (const l of linesOfCell(p, cell)) {
-      const n = p.lines[l].count;
-      if (n !== null && used[l] >= n) return false;
+/**
+ * Backtracking search that always fills the most constrained cell first.
+ * Stops after `limit` solutions: 2 is enough to test uniqueness.
+ */
+export function findSolutions(p: SolveInput, limit = 2, nodeLimit = 2_000_000): SolveResult {
+  const nCells = p.nRows * p.nCols;
+  const types: Die[] = [];
+  const counts: number[] = [];
+  const typeIndex = new Map<string, number>();
+  for (const die of p.dice) {
+    const code = dieCode(die);
+    let t = typeIndex.get(code);
+    if (t === undefined) {
+      t = types.length;
+      typeIndex.set(code, t);
+      types.push(die);
+      counts.push(0);
     }
-    return true;
-  };
+    counts[t]++;
+  }
 
-  /** Every counted line can still reach its count with the clues left. */
-  const reachable = (): boolean => {
-    let open = 0;
-    for (let clue = 0; clue < p.nClues; clue++) if (assign[clue] < 0) open |= p.candidates[clue];
-    open &= ~taken;
-    return p.lines.every((line, l) => {
-      if (line.count === null) return true;
-      let possible = 0;
-      for (const cell of cellsOf(open & line.mask)) if (isFree(cell)) possible++;
-      return used[l] + possible >= line.count;
-    });
-  };
+  const checks = p.rules.map((rule) => compileRule(p, rule));
+  const grid: (Die | null)[] = new Array(nCells).fill(null);
+  const solutions: Die[][] = [];
+  let branches = 0;
+  let nodes = 0;
+  let aborted = false;
 
-  const search = (placed: number): void => {
-    if (placed === p.nClues) {
-      if (p.lines.every((line, l) => line.count === null || used[l] === line.count)) {
-        solutions.push([...assign]);
+  const fits = (cell: number, t: number): boolean => {
+    grid[cell] = types[t];
+    let ok = true;
+    for (const rule of p.rulesByCell[cell]) {
+      if (checks[rule](grid, cell)) {
+        ok = false;
+        break;
       }
+    }
+    grid[cell] = null;
+    return ok;
+  };
+
+  const search = (filled: number): void => {
+    if (solutions.length >= limit || aborted) return;
+    if (++nodes > nodeLimit) {
+      aborted = true;
       return;
     }
-    if (!reachable()) return;
+    if (filled === nCells) {
+      solutions.push(grid.map((d) => d!));
+      return;
+    }
 
-    let best = -1;
+    let bestCell = -1;
     let bestOptions: number[] = [];
-    for (let clue = 0; clue < p.nClues; clue++) {
-      if (assign[clue] >= 0) continue;
-      const options = cellsOf(p.candidates[clue]).filter(isFree);
+    for (let cell = 0; cell < nCells; cell++) {
+      if (grid[cell]) continue;
+      const options: number[] = [];
+      for (let t = 0; t < types.length; t++) if (counts[t] && fits(cell, t)) options.push(t);
       if (!options.length) return;
-      if (best < 0 || options.length < bestOptions.length) {
-        best = clue;
+      if (bestCell < 0 || options.length < bestOptions.length) {
+        bestCell = cell;
         bestOptions = options;
+        if (options.length === 1) break;
       }
     }
 
-    for (const cell of bestOptions) {
-      const [rl, cl] = linesOfCell(p, cell);
-      assign[best] = cell;
-      taken |= bit(cell);
-      used[rl]++;
-      used[cl]++;
-      search(placed + 1);
-      used[rl]--;
-      used[cl]--;
-      taken &= ~bit(cell);
-      assign[best] = -1;
-      if (solutions.length >= limit) return;
+    if (bestOptions.length > 1) branches++;
+    for (const t of bestOptions) {
+      grid[bestCell] = types[t];
+      counts[t]--;
+      search(filled + 1);
+      counts[t]++;
+      grid[bestCell] = null;
+      if (solutions.length >= limit || aborted) return;
     }
   };
 
   search(0);
-  return { count: solutions.length, solutions };
+  return { count: solutions.length, solutions, branches, aborted };
 }

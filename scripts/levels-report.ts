@@ -1,42 +1,42 @@
 /**
  * Validates every level and prints its difficulty.
- *   npm run levels            summary
- *   npm run levels -- --steps also prints the deduction walkthrough
+ *   npm run levels                 summary
+ *   npm run levels -- --rules      also lists each level's rules
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { analyzeLevel } from '../src/core/analyze.ts';
-import { describeStep } from '../src/core/explain.ts';
-import { cellKey } from '../src/core/puzzle.ts';
+import { deduce, rate } from '../src/core/deduce.ts';
+import { describeRule } from '../src/core/describe.ts';
+import { buildPuzzle, dieCode } from '../src/core/puzzle.ts';
+import { evaluate } from '../src/core/rules.ts';
+import { findSolutions } from '../src/core/solver.ts';
 import type { LevelDef } from '../src/core/types.ts';
 
 const dir = join(import.meta.dirname, '../src/levels');
-const showSteps = process.argv.includes('--steps');
+const showRules = process.argv.includes('--rules');
 let failed = false;
 
 for (const file of readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
-  const def = JSON.parse(readFileSync(join(dir, file), 'utf8')) as LevelDef;
   try {
-    const { puzzle: p, unique, alternative, rating } = analyzeLevel(def);
-    const size = `${p.nRows}×${p.nCols}`;
-    const status = unique ? '✔' : '✘';
+    const def = JSON.parse(readFileSync(join(dir, file), 'utf8')) as LevelDef;
+    const p = buildPuzzle(def);
+    const declaredOk = p.rules.every((rule) => evaluate(p, rule, p.solution).status === 'ok');
+    const { count, solutions } = findSolutions(p, 2);
+    const rating = rate(p);
+    const ok = declaredOk && count === 1 && rating.deducible;
+    failed ||= !ok;
+
     console.log(
-      `${status} ${file.padEnd(28)} ${size.padEnd(5)} ${String(p.nClues).padStart(2)} peças  ` +
-        `counts=${(def.counts ?? 'none').padEnd(4)}  ${rating.label.padEnd(9)} ` +
-        `passos=${rating.steps.length} hipóteses=${rating.hypotheses} chutes=${rating.guesses}`,
+      `${ok ? '✔' : '✘'} ${file.padEnd(26)} ${`${p.nRows}×${p.nCols}`.padEnd(5)} ${rating.label.padEnd(8)} ` +
+        `regras=${p.rules.length} alcance=${rating.reachRounds} rodadas=${rating.rounds}`,
     );
-    if (!unique) {
-      failed = true;
-      if (alternative) {
-        const diff = alternative
-          .map((cell, clue) => (cell !== p.solution[clue] ? `${def.clues[clue].id} → ${cellKey(p, cell)}` : ''))
-          .filter(Boolean);
-        console.log(`    outra solução possível: ${diff.join(', ')}`);
-      } else {
-        console.log('    a solução declarada não satisfaz as regras');
-      }
+    if (!declaredOk) console.log('    a solução declarada quebra alguma regra');
+    if (count !== 1) console.log(count ? `    outra solução: ${solutions[1].map(dieCode).join(' ')}` : '    sem solução');
+    if (count === 1 && !rating.deducible) {
+      const stuck = deduce(p).grid.filter(Boolean).length;
+      console.log(`    exige tentativa e erro (a dedução para em ${stuck}/${p.nCells} dados)`);
     }
-    if (showSteps) rating.steps.forEach((st, i) => console.log(`    ${String(i + 1).padStart(2)}. ${describeStep(p, st)}`));
+    if (showRules) p.rules.forEach((r) => console.log(`    ${describeRule(r)}`));
   } catch (err) {
     failed = true;
     console.log(`✘ ${file}\n  ${(err as Error).message}`);

@@ -1,8 +1,8 @@
 {
-  "name": "inklink",
+  "name": "vitral",
   "private": true,
   "version": "0.1.0",
-  "description": "A cozy word-association logic puzzle — find where each clue links two words.",
+  "description": "A stained-glass dice logic puzzle — place every die without breaking a rule.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "levels": "node scripts/levels-report.ts",
-    "levels:explore": "node scripts/explore-solutions.ts",
+    "levels:generate": "node scripts/generate-levels.ts",
     "media": "vite build && node scripts/capture-media.ts",
     "deploy": "node scripts/deploy-pages.ts"
   },

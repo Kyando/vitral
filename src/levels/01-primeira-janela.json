@@ -1,0 +1,86 @@
+{
+  "id": "primeira-janela",
+  "title": "Primeira Janela",
+  "subtitle": "Dados vizinhos nunca dividem a mesma cor.",
+  "rows": 3,
+  "cols": 3,
+  "dice": [
+    "R2",
+    "R2",
+    "R4",
+    "Y1",
+    "Y1",
+    "Y5",
+    "Y6",
+    "G3",
+    "G3"
+  ],
+  "rules": [
+    {
+      "type": "adjacent-colors-differ"
+    },
+    {
+      "line": "row",
+      "index": 0,
+      "type": "sum",
+      "value": 8
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "sum",
+      "value": 6
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "green",
+      "count": 1
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 1
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "sum",
+      "value": 13
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "color-count",
+      "color": "red",
+      "count": 0
+    },
+    {
+      "line": "col",
+      "index": 0,
+      "type": "sum",
+      "value": 14
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "color-count",
+      "color": "green",
+      "count": 1
+    }
+  ],
+  "solution": [
+    "Y5",
+    "R2",
+    "Y1",
+    "G3",
+    "Y1",
+    "R2",
+    "Y6",
+    "R4",
+    "G3"
+  ]
+}

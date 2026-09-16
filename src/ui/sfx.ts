@@ -16,17 +16,14 @@ export class Sfx {
     this.tone(880, 0.05, 'sine', 0.04, 0.03);
   }
 
-  note(): void {
-    this.tone(1250, 0.04, 'sine', 0.05);
+  /** A rule just got satisfied. */
+  ok(): void {
+    this.tone(990, 0.09, 'sine', 0.05, 0.05);
+    this.tone(1320, 0.12, 'sine', 0.04, 0.11);
   }
 
   nope(): void {
     this.tone(210, 0.16, 'square', 0.035, 0, 150);
-  }
-
-  hint(): void {
-    this.tone(740, 0.12, 'sine', 0.06);
-    this.tone(990, 0.16, 'sine', 0.05, 0.09);
   }
 
   win(): void {

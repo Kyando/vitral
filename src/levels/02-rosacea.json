@@ -1,0 +1,92 @@
+{
+  "id": "rosacea",
+  "title": "Rosácea",
+  "subtitle": "Alguns quadros já pedem uma cor ou um valor.",
+  "rows": 3,
+  "cols": 3,
+  "dice": [
+    "R2",
+    "R3",
+    "Y6",
+    "G4",
+    "G6",
+    "P1",
+    "P1",
+    "P3",
+    "P4"
+  ],
+  "rules": [
+    {
+      "type": "adjacent-values-differ"
+    },
+    {
+      "line": "row",
+      "index": 0,
+      "type": "ascending"
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "colors-unique"
+    },
+    {
+      "line": "row",
+      "index": 1,
+      "type": "color-count",
+      "color": "yellow",
+      "count": 1
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "color-count",
+      "color": "red",
+      "count": 2
+    },
+    {
+      "line": "row",
+      "index": 2,
+      "type": "ascending"
+    },
+    {
+      "line": "col",
+      "index": 1,
+      "type": "sum",
+      "value": 12
+    },
+    {
+      "line": "col",
+      "index": 2,
+      "type": "values-unique"
+    },
+    {
+      "type": "cell-value",
+      "row": 0,
+      "col": 2,
+      "value": 6
+    },
+    {
+      "type": "cell-color",
+      "row": 1,
+      "col": 2,
+      "color": "purple"
+    },
+    {
+      "type": "cell-value",
+      "row": 2,
+      "col": 0,
+      "value": 1
+    }
+  ],
+  "solution": [
+    "P3",
+    "P4",
+    "G6",
+    "G4",
+    "Y6",
+    "P1",
+    "P1",
+    "R2",
+    "R3"
+  ]
+}

@@ -1,13 +1,9 @@
-/** Local persistence (per browser). Everything is keyed by ids so level edits don't corrupt saves. */
+/** Local persistence (per browser). Keyed by level id so level edits don't corrupt other saves. */
 
 export interface LevelProgress {
-  /** clueId -> "rowId+colId" */
+  /** die index (in the level's dice list) -> "row,col" */
   placements: Record<string, string>;
-  /** "rowId+colId" -> clueIds noted in that cell */
-  notes: Record<string, string[]>;
   done: boolean;
-  checks: number;
-  hints: number;
   moves: number;
 }
 
@@ -19,7 +15,7 @@ export interface SaveData {
   settings: { theme: ThemeChoice; sound: boolean; seenHelp: boolean; lastLevel: string | null };
 }
 
-const KEY = 'inklink:v1';
+export const SAVE_KEY = 'vitral:v1';
 
 const defaults = (): SaveData => ({
   version: 1,
@@ -27,18 +23,11 @@ const defaults = (): SaveData => ({
   settings: { theme: 'system', sound: true, seenHelp: false, lastLevel: null },
 });
 
-export const emptyProgress = (): LevelProgress => ({
-  placements: {},
-  notes: {},
-  done: false,
-  checks: 0,
-  hints: 0,
-  moves: 0,
-});
+export const emptyProgress = (): LevelProgress => ({ placements: {}, done: false, moves: 0 });
 
 export function loadSave(): SaveData {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaults();
     const data = JSON.parse(raw) as SaveData;
     if (data.version !== 1) return defaults();
@@ -50,7 +39,7 @@ export function loadSave(): SaveData {
 
 export function writeSave(data: SaveData): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(data));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   } catch {
     // Storage unavailable (private mode, quota): the game still works for this session.
   }

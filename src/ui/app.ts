@@ -1,15 +1,17 @@
-import type { Session as SessionType } from '../game/session.ts';
-import { Session } from '../game/session.ts';
+import type { Color } from '../core/types.ts';
 import { emptyProgress, loadSave, writeSave, type ThemeChoice } from '../game/save.ts';
+import { Session } from '../game/session.ts';
 import { CATALOG } from '../levels/catalog.ts';
-import { h, icon, svg } from './dom.ts';
+import { dieBody, ruleBadge, ruleGlyph } from './dice.ts';
+import { h, svg } from './dom.ts';
 import { ICONS } from './icons.ts';
 import { LevelView } from './level-view.ts';
 import { openModal, toast } from './overlay.ts';
 import { Sfx } from './sfx.ts';
 
-const GAME_NAME = 'Inklink';
+const GAME_NAME = 'Vitral';
 const THEME_LABEL: Record<ThemeChoice, string> = { system: 'do sistema', light: 'claro', dark: 'escuro' };
+const SQUARE: Record<Color, string> = { red: '🟥', yellow: '🟨', green: '🟩', blue: '🟦', purple: '🟪' };
 
 const iconButton = (label: string, glyph: string, onClick: () => void) =>
   h('button', { type: 'button', class: 'icon-btn', 'aria-label': label, title: label, onclick: onClick }, svg(glyph));
@@ -74,7 +76,6 @@ export class App {
       total: CATALOG.length,
       sfx: this.sfx,
       onSolved: () => this.showWin(session),
-      onHint: (lines) => this.showHint(session, lines),
     });
     this.main.replaceChildren(this.view.el);
     this.save.settings.lastLevel = entry.def.id;
@@ -93,6 +94,7 @@ export class App {
         ...CATALOG.map((entry, i) => {
           const progress = this.save.levels[entry.def.id];
           const classes = ['chapter-card', i === this.index && 'is-current', progress?.done && 'is-done'];
+          const colors = [...new Set(entry.puzzle.dice.map((d) => d.color))];
           return h(
             'li',
             {},
@@ -107,7 +109,7 @@ export class App {
                 },
               },
               h('span', { class: 'chapter-num' }, progress?.done ? '✓' : String(i + 1)),
-              h('span', { class: 'chapter-icons', 'aria-hidden': 'true' }, ...entry.def.clues.slice(0, 3).map((c) => icon(c.icon, 'mini'))),
+              h('span', { class: 'chapter-icons', 'aria-hidden': 'true' }, ...colors.map((color) => h('i', { class: 'swatch', 'data-color': color }))),
               h('span', { class: 'chapter-title' }, entry.def.title),
               h('span', { class: 'chapter-meta' }, `${entry.puzzle.nRows}×${entry.puzzle.nCols} · ${entry.rating.label}`),
             ),
@@ -118,62 +120,57 @@ export class App {
   }
 
   private openHelp(): void {
-    const word = (glyph: string, label: string) =>
-      h('span', { class: 'ex-word' }, h('span', { class: 'ex-icon' }, glyph), h('span', { class: 'ex-label' }, label));
+    const die = (color: Color, value: number) => h('span', { class: 'die ex-die' }, dieBody({ color, value }));
+    const status = (className: string, text: string) =>
+      h('li', { class: 'legend-item' }, h('span', { class: `badge ${className}` }, ruleGlyph({ type: 'sum', line: 'row', index: 0, value: 9 })), text);
     openModal({
       title: 'Como jogar',
       className: 'modal--help',
       body: h(
         'div',
         { class: 'help' },
-        h('p', {}, 'Cada quadro fica entre duas palavras: a da linha e a da coluna. Arraste cada peça para o quadro onde ela combina com as duas.'),
+        h('p', {}, 'Monte o vitral: arraste cada dado para um quadro, até o tabuleiro ficar cheio, sem quebrar nenhuma regra.'),
         h(
           'div',
-          { class: 'example', 'aria-label': 'Médico mais Urso combina com Veterinário' },
-          word('🩺', 'Médico'),
-          h('span', { class: 'ex-op' }, '+'),
-          word('🐻', 'Urso'),
-          h('span', { class: 'ex-op' }, '='),
-          h('span', { class: 'ex-piece' }, h('span', { class: 'ex-icon' }, '🐾'), h('span', { class: 'ex-label' }, 'Veterinário')),
+          { class: 'example', 'aria-label': 'Exemplo: uma linha com soma 9 recebe os dados 2, 3 e 4' },
+          h('span', { class: 'ex-head' }, ruleBadge({ type: 'sum', line: 'row', index: 0, value: 9 })),
+          die('red', 2),
+          die('blue', 3),
+          die('yellow', 4),
         ),
         h(
           'ul',
           {},
-          h('li', {}, 'Cada quadro recebe ', h('b', {}, 'no máximo uma peça'), '.'),
-          h('li', {}, 'Algumas peças parecem servir em mais de um lugar. Use as outras para descobrir qual é o certo.'),
-          h('li', {}, 'Um ', h('b', {}, 'número'), ' numa palavra diz quantas peças aquela linha ou coluna recebe.'),
-          h('li', {}, h('b', {}, 'Anotar'), ': selecione uma peça e toque nos quadros para marcar onde ela pode ir.'),
-          h('li', {}, h('b', {}, 'Verificar'), ' diz quantas peças estão no lugar certo.'),
+          h('li', {}, 'As regras de cada ', h('b', {}, 'linha'), ' ficam à esquerda; as de cada ', h('b', {}, 'coluna'), ', no topo. Toque nelas para ler.'),
+          h('li', {}, 'Alguns quadros pedem uma ', h('b', {}, 'cor'), ' ou um ', h('b', {}, 'valor'), ' específico.'),
+          h('li', {}, 'As ', h('b', {}, 'regras gerais'), ' valem para o vitral inteiro e aparecem abaixo dos dados.'),
+          h('li', {}, 'Tudo é conferido a cada jogada. Dá para resolver só com lógica, sem chutar.'),
+        ),
+        h(
+          'ul',
+          { class: 'legend' },
+          status('', 'ainda em aberto'),
+          status('is-ok', 'cumprida'),
+          status('is-broken', 'quebrada: os dados culpados ficam marcados'),
         ),
       ),
       actions: [h('button', { type: 'button', class: 'btn btn--primary', onclick: (e: Event) => (e.target as HTMLElement).closest('dialog')?.close() }, 'Vamos lá')],
     });
   }
 
-  private showHint(session: SessionType, lines: string[]): void {
-    openModal({
-      title: 'Dica',
-      className: 'modal--hint',
-      body: h(
-        'div',
-        { class: 'hint' },
-        h('ol', {}, ...lines.map((line, i) => h('li', { class: i === lines.length - 1 ? 'is-key' : '' }, line))),
-        h('p', { class: 'hint-meta' }, `Dicas usadas neste capítulo: ${session.progress.hints}`),
-      ),
-    });
-  }
-
-  private showWin(session: SessionType): void {
-    const { def, nClues } = session.puzzle;
-    const pr = session.progress;
+  private showWin(session: Session): void {
+    const p = session.puzzle;
     const number = this.index + 1;
     const hasNext = number < CATALOG.length;
-    const stat = (value: number, label: string) =>
+    const stat = (value: string | number, label: string) =>
       h('div', { class: 'stat' }, h('strong', {}, String(value)), h('span', {}, label));
+    const grid = session.grid();
+    const rows = Array.from({ length: p.nRows }, (_, r) =>
+      grid.slice(r * p.nCols, (r + 1) * p.nCols).map((d) => (d ? SQUARE[d.color] : '⬜')).join(''),
+    );
 
     const share = () => {
-      const verdict = pr.checks === 1 ? '✅ de primeira' : `🔎 ${pr.checks} verificações`;
-      const text = `${GAME_NAME} · Capítulo ${number} (${session.rating.label})\n${verdict} · 💡 ${pr.hints} dicas\n${'🟩'.repeat(nClues)}`;
+      const text = `${GAME_NAME} · Capítulo ${number} (${session.rating.label})\n${session.progress.moves} movimentos\n${rows.join('\n')}`;
       navigator.clipboard?.writeText(text).then(
         () => toast('Resultado copiado!'),
         () => toast('Não foi possível copiar'),
@@ -181,14 +178,18 @@ export class App {
     };
 
     const modal = openModal({
-      title: 'Capítulo concluído!',
+      title: 'Vitral completo!',
       className: 'modal--win',
       body: h(
         'div',
         { class: 'win' },
-        h('div', { class: 'win-art', 'aria-hidden': 'true' }, ...def.clues.slice(0, 5).map((c) => icon(c.icon, 'win-icon'))),
-        h('p', {}, `Você desvendou “${def.title}”.`),
-        h('div', { class: 'stats' }, stat(pr.moves, 'movimentos'), stat(pr.checks, 'verificações'), stat(pr.hints, 'dicas')),
+        h(
+          'div',
+          { class: 'win-art', 'aria-hidden': 'true', style: `--cols: ${p.nCols}` },
+          ...grid.map((d, i) => h('i', { class: 'swatch', 'data-color': d?.color ?? '', style: `animation-delay: ${i * 30}ms` })),
+        ),
+        h('p', {}, `Você montou “${p.def.title}”.`),
+        h('div', { class: 'stats' }, stat(session.progress.moves, 'movimentos'), stat(p.rules.length, 'regras cumpridas')),
       ),
       actions: [
         h('button', { type: 'button', class: 'btn', onclick: share }, svg(ICONS.share), h('span', {}, 'Compartilhar')),

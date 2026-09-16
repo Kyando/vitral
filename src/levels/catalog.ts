@@ -1,4 +1,4 @@
-import { solveLogically, type Rating } from '../core/deduce.ts';
+import { rate, type Rating } from '../core/deduce.ts';
 import { buildPuzzle, type Puzzle } from '../core/puzzle.ts';
 import type { LevelDef } from '../core/types.ts';
 
@@ -17,7 +17,7 @@ export const CATALOG: CatalogEntry[] = Object.keys(modules)
     try {
       const def = modules[path];
       const puzzle = buildPuzzle(def);
-      return [{ def, puzzle, rating: solveLogically(puzzle) }];
+      return [{ def, puzzle, rating: rate(puzzle) }];
     } catch (err) {
       console.error(`Nível ignorado (${path}):`, err);
       return [];

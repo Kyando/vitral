@@ -1,7 +1,10 @@
-import { cellsOf, rowOf, colOf } from '../core/puzzle.ts';
-import type { WordDef } from '../core/types.ts';
+import { describeRule } from '../core/describe.ts';
+import { colOf, rowOf } from '../core/puzzle.ts';
+import { lineCells, ruleScope, type Status } from '../core/rules.ts';
+import type { CellRule } from '../core/types.ts';
 import type { Session } from '../game/session.ts';
-import { h, icon, label, svg } from './dom.ts';
+import { dieBody, dieLabel, face, ruleBadge, ruleGlyph } from './dice.ts';
+import { h, svg } from './dom.ts';
 import { makeDraggable } from './drag.ts';
 import { burst, flip, replay } from './fx.ts';
 import { ICONS } from './icons.ts';
@@ -14,14 +17,16 @@ export interface LevelViewOptions {
   total: number;
   sfx: Sfx;
   onSolved(): void;
-  onHint(lines: string[]): void;
 }
 
 type DropTarget = number | 'tray' | null;
 
-const TINTS = 8;
-const HEADER_RATIO = 0.72;
-const RADII = ['16px 12px 17px 13px', '12px 17px 13px 16px', '17px 14px 12px 15px', '13px 16px 15px 12px'];
+const HEADER_RATIO = 0.78;
+/** Smallest header sizes (px): a row header fits one badge's width, a column header fits its stacked badges. */
+const HEAD_MIN_WIDTH = 46;
+const HEAD_MIN_HEIGHT = [30, 34, 60];
+const RADII = ['12px 9px 13px 10px', '9px 13px 10px 12px', '13px 10px 9px 12px', '10px 12px 12px 9px'];
+const STATUS_ICON: Record<Status, string> = { open: '', ok: ICONS.check, broken: ICONS.close };
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -31,17 +36,21 @@ export class LevelView {
   private readonly opts: LevelViewOptions;
   private readonly boardWrap: HTMLElement;
   private readonly board: HTMLElement;
-  private readonly trayCount: HTMLElement;
   private readonly cells: HTMLElement[] = [];
   private readonly pieces: HTMLElement[] = [];
   private readonly slots: HTMLElement[] = [];
-  private readonly badges: (HTMLElement | null)[] = [];
+  /** Every element showing a rule's status: header badge, rules list item, cell tag. */
+  private readonly ruleEls: HTMLElement[][];
+  /** Row/column headers and the rules they hold. */
+  private readonly heads: { el: HTMLElement; rules: number[] }[] = [];
   private readonly undoBtn: HTMLButtonElement;
-  private readonly notesBtn: HTMLButtonElement;
-  private readonly checkBtn: HTMLButtonElement;
+  private readonly summary: HTMLElement;
+  private readonly trayScroll: HTMLElement;
   private readonly resizeObserver: ResizeObserver;
+  private statuses: Status[];
   private selected = -1;
-  private notesMode = false;
+  /** Solved boards celebrate once; loading an already solved board doesn't celebrate again. */
+  private celebrated: boolean;
   private hovered: HTMLElement | null = null;
 
   constructor(opts: LevelViewOptions) {
@@ -49,6 +58,9 @@ export class LevelView {
     this.s = opts.session;
     const p = this.s.puzzle;
     const def = p.def;
+    this.ruleEls = p.rules.map(() => []);
+    this.statuses = p.rules.map(() => 'open');
+    this.celebrated = this.s.isSolved();
 
     // Chapter heading
     const rating = this.s.rating;
@@ -70,51 +82,71 @@ export class LevelView {
       def.subtitle ? h('p', { class: 'subtitle' }, def.subtitle) : null,
     );
 
-    // Board
-    this.board = h('div', { class: 'board', 'aria-label': 'Tabuleiro' });
+    // Board: column rules on top, row rules on the left, window restrictions printed on cells.
+    this.board = h('div', { class: 'board', 'aria-label': 'Vitral' });
     this.board.style.setProperty('--rows', String(p.nRows));
     this.board.style.setProperty('--cols', String(p.nCols));
     this.board.append(h('div', { class: 'corner', 'aria-hidden': 'true' }, '✦'));
-    def.cols.forEach((word, c) => this.board.append(this.wordCard(word, 'col', p.nRows + c)));
-    def.rows.forEach((row, r) => {
-      this.board.append(this.wordCard(row, 'row', r));
-      def.cols.forEach((col, c) => this.board.append(this.makeCell(row, col, r * p.nCols + c)));
-    });
+    for (let c = 0; c < p.nCols; c++) this.board.append(this.makeHead('col', c));
+    for (let r = 0; r < p.nRows; r++) {
+      this.board.append(this.makeHead('row', r));
+      for (let c = 0; c < p.nCols; c++) this.board.append(this.makeCell(r * p.nCols + c));
+    }
     this.boardWrap = h('div', { class: 'board-wrap' }, this.board);
 
-    // Tray
-    this.trayCount = h('span', { class: 'tray-count' });
+    // Tools sit next to the summary, so the board keeps every pixel of height on phones.
+    const tool = (text: string, glyph: string, onClick: () => void) =>
+      h('button', { type: 'button', class: 'icon-btn tool', 'aria-label': text, title: text, onclick: onClick }, svg(glyph));
+    this.undoBtn = tool('Desfazer', ICONS.undo, () => this.undo());
+    const tools = h('nav', { class: 'tools', 'aria-label': 'Ferramentas' }, tool('Recomeçar', ICONS.restart, () => this.restart()), this.undoBtn);
+
+    // Tray, with the live rule feedback right under the dice.
     const tray = h('div', { class: 'tray' });
-    def.clues.forEach((_, i) => {
+    p.dice.forEach((_, i) => {
       const slot = h('div', { class: 'slot' }, this.makePiece(i));
       this.slots.push(slot);
       tray.append(slot);
     });
+
+    const boardRules = p.rules.flatMap((rule, i) => (ruleScope(rule) === 'board' ? [i] : []));
+    const rulesList = h(
+      'ul',
+      { class: 'rules', 'aria-label': 'Regras gerais' },
+      ...boardRules.map((i) => {
+        const text = describeRule(p.rules[i]);
+        const item = h(
+          'li',
+          { class: 'rule', title: text, onclick: () => toast(text, 3200) },
+          h('span', { class: 'rule-glyph', 'aria-hidden': 'true' }, ruleGlyph(p.rules[i])),
+          h('span', { class: 'rule-text' }, text),
+          h('span', { class: 'rule-status', 'aria-hidden': 'true' }),
+        );
+        this.ruleEls[i].push(item);
+        return item;
+      }),
+    );
+    this.summary = h('p', { class: 'summary', role: 'status', 'aria-live': 'polite' });
+    this.trayScroll = h('div', { class: 'tray-scroll' }, tray);
     const trayPanel = h(
       'section',
-      { class: 'tray-panel', 'aria-label': 'Peças' },
-      h('div', { class: 'tray-head' }, h('span', {}, 'Peças'), this.trayCount),
-      tray,
+      { class: 'tray-panel', 'aria-label': 'Dados' },
+      this.trayScroll,
+      h('div', { class: 'tray-foot' }, h('div', { class: 'foot-row' }, tools, this.summary), boardRules.length ? rulesList : null),
     );
     trayPanel.addEventListener('click', (e) => {
-      if (!(e.target as Element).closest('.piece')) this.onTrayTap();
+      if (!(e.target as Element).closest('.piece, .tray-foot')) this.onTrayTap();
     });
 
-    // Actions
-    const button = (label: string, glyph: string, onClick: () => void, extra = '') =>
-      h('button', { type: 'button', class: `btn ${extra}`, onclick: onClick }, svg(glyph), h('span', { class: 'btn-label' }, label));
-    this.undoBtn = button('Desfazer', ICONS.undo, () => this.undo());
-    this.notesBtn = button('Anotar', ICONS.pencil, () => this.toggleNotes());
-    this.notesBtn.setAttribute('aria-pressed', 'false');
-    const hintBtn = button('Dica', ICONS.bulb, () => this.showHint());
-    const restartBtn = button('Recomeçar', ICONS.restart, () => this.restart(), 'btn--ghost');
-    this.checkBtn = button('Verificar', ICONS.check, () => this.check(), 'btn--primary');
-    const actions = h('nav', { class: 'actions', 'aria-label': 'Ações' }, restartBtn, this.undoBtn, this.notesBtn, hintBtn, this.checkBtn);
-
-    this.el = h('main', { class: 'stage' }, heading, h('div', { class: 'play' }, this.boardWrap, trayPanel), actions);
+    this.el = h(
+      'main',
+      { class: 'stage' },
+      heading,
+      h('div', { class: 'play' }, h('div', { class: 'board-area' }, this.boardWrap), trayPanel),
+    );
 
     this.resizeObserver = new ResizeObserver(() => this.fit());
     this.resizeObserver.observe(this.boardWrap);
+    this.resizeObserver.observe(this.trayScroll);
     this.sync();
   }
 
@@ -124,30 +156,67 @@ export class LevelView {
 
   // ── building ────────────────────────────────────────────────────────────
 
-  private wordCard(word: WordDef, kind: 'row' | 'col', line: number): HTMLElement {
-    const info = this.s.puzzle.lines[line];
-    const badge = info.shown
-      ? h('span', { class: 'count', title: `Recebe ${plural(info.count ?? 0, 'peça', 'peças')}` })
-      : null;
-    this.badges[line] = badge;
-    return h('div', { class: `word word--${kind}` }, icon(word.icon, 'word-icon'), label(word.label, 'word-label', kind === 'row' ? 6 : 9), badge);
+  private makeHead(line: 'row' | 'col', index: number): HTMLElement {
+    const p = this.s.puzzle;
+    const rules = p.rules.flatMap((rule, i) => ('line' in rule && rule.line === line && rule.index === index ? [i] : []));
+    const text = rules.map((i) => describeRule(p.rules[i])).join(' · ');
+    const el = h('div', {
+      class: `head head--${line}${rules.length ? '' : ' is-empty'}`,
+      role: rules.length ? 'button' : undefined,
+      tabindex: rules.length ? 0 : undefined,
+      'aria-label': text || `${line === 'row' ? 'Linha' : 'Coluna'} ${index + 1}: sem regra`,
+    });
+    this.heads.push({ el, rules });
+    if (!rules.length) return el;
+
+    for (const i of rules) {
+      const badge = ruleBadge(p.rules[i]);
+      this.ruleEls[i].push(badge);
+      el.append(badge);
+    }
+    const cells = lineCells(p, { line, index });
+    const focus = (on: boolean) => cells.forEach((cell) => this.cells[cell]?.classList.toggle('is-focus', on));
+    el.addEventListener('pointerenter', () => focus(true));
+    el.addEventListener('pointerleave', () => focus(false));
+    el.addEventListener('focus', () => focus(true));
+    el.addEventListener('blur', () => focus(false));
+    el.addEventListener('click', () => toast(text, 3200));
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toast(text, 3200);
+      }
+    });
+    return el;
   }
 
-  private makeCell(row: WordDef, col: WordDef, index: number): HTMLElement {
+  private makeCell(index: number): HTMLElement {
     const p = this.s.puzzle;
+    const r = rowOf(p, index);
+    const c = colOf(p, index);
+    const reqIndex = p.rules.findIndex((rule) => 'row' in rule && !('line' in rule) && rule.row === r && rule.col === c);
+    const req = reqIndex >= 0 ? (p.rules[reqIndex] as CellRule) : null;
+
     const cell = h(
       'div',
       {
         class: 'cell',
+        'data-cell': index,
         role: 'button',
         tabindex: 0,
-        'aria-label': `${row.label} com ${col.label}`,
-        style: `border-radius: ${RADII[(rowOf(p, index) * 3 + colOf(p, index)) % RADII.length]}`,
+        'aria-label': `Linha ${r + 1}, coluna ${c + 1}${req ? `. ${describeRule(req)}` : ''}`,
+        'data-req-color': req?.type === 'cell-color' ? req.color : undefined,
+        style: `border-radius: ${RADII[(r * 3 + c) % RADII.length]}`,
       },
-      h('span', { class: 'cell-pair', 'aria-hidden': 'true' }, icon(row.icon, 'mini'), icon(col.icon, 'mini')),
-      h('span', { class: 'cell-notes', 'aria-hidden': 'true' }),
+      req?.type === 'cell-value' ? face(req.value, 'face cell-req') : null,
       h('span', { class: 'cell-slot' }),
     );
+    if (req) {
+      // Stays visible over the die, so the restriction is never hidden.
+      const tag = h('span', { class: 'cell-tag', title: describeRule(req), 'aria-hidden': 'true' }, ruleGlyph(req));
+      this.ruleEls[reqIndex].push(tag);
+      cell.append(tag);
+    }
     cell.addEventListener('click', () => this.onCellTap(index));
     cell.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -159,31 +228,30 @@ export class LevelView {
     return cell;
   }
 
-  private makePiece(clue: number): HTMLElement {
-    const def = this.s.puzzle.def.clues[clue];
-    const tilt = ((clue * 37) % 7) - 3;
+  private makePiece(index: number): HTMLElement {
+    const die = this.s.puzzle.dice[index];
     const piece = h(
       'div',
       {
-        class: 'piece',
+        class: 'piece die',
+        'data-die': index,
         role: 'button',
         tabindex: 0,
-        'aria-label': def.label,
-        'data-tint': clue % TINTS,
-        style: `--tilt: ${tilt}deg`,
+        'aria-label': `Dado ${dieLabel(die)}`,
+        style: `--tilt: ${((index * 37) % 7) - 3}deg`,
       },
-      h('span', { class: 'piece-card' }, icon(def.icon, 'piece-icon'), label(def.label, 'piece-label', 8)),
+      dieBody(die),
     );
     piece.addEventListener('click', (e) => e.stopPropagation());
     piece.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         e.stopPropagation();
-        this.onPieceTap(clue);
+        this.onPieceTap(index);
       }
     });
     makeDraggable(piece, {
-      onTap: () => this.onPieceTap(clue),
+      onTap: () => this.onPieceTap(index),
       onStart: () => {
         this.selected = -1;
         this.board.classList.add('is-dragging');
@@ -195,9 +263,9 @@ export class LevelView {
         this.hover(null);
         this.board.classList.remove('is-dragging');
         const target = this.dropTarget(x, y);
-        const from = new Map([[clue, ghostRect]]);
+        const from = new Map([[index, ghostRect]]);
         if (target === null) this.sync(from);
-        else this.moveTo(clue, target === 'tray' ? null : target, from);
+        else this.moveTo(index, target === 'tray' ? null : target, from);
       },
     });
     this.pieces.push(piece);
@@ -221,37 +289,28 @@ export class LevelView {
     this.hovered = next;
   }
 
-  private onPieceTap(clue: number): void {
-    const at = this.s.placement[clue];
-    // With another piece in hand, tapping a placed piece means "put it here".
-    if (this.selected >= 0 && this.selected !== clue && at >= 0) {
+  private onPieceTap(die: number): void {
+    const at = this.s.placement[die];
+    // With another die in hand, tapping a placed die means "put it here".
+    if (this.selected >= 0 && this.selected !== die && at >= 0) {
       this.onCellTap(at);
       return;
     }
-    this.selected = this.selected === clue ? -1 : clue;
+    this.selected = this.selected === die ? -1 : die;
     if (this.selected >= 0) this.opts.sfx.pick();
     this.sync();
   }
 
   private onCellTap(cell: number): void {
-    const occupant = this.s.clueAt(cell);
     if (this.selected >= 0) {
-      if (this.notesMode) {
-        if (occupant >= 0) return;
-        this.s.toggleNote(this.selected, cell);
-        this.opts.sfx.note();
-        this.sync();
-      } else {
-        this.moveTo(this.selected, cell);
-      }
+      this.moveTo(this.selected, cell);
       return;
     }
+    const occupant = this.s.dieAt(cell);
     if (occupant >= 0) {
       this.selected = occupant;
       this.opts.sfx.pick();
       this.sync();
-    } else if (this.notesMode) {
-      toast('Selecione uma peça para anotar');
     }
   }
 
@@ -264,74 +323,37 @@ export class LevelView {
     }
   }
 
-  private moveTo(clue: number, cell: number | null, from?: Map<number, DOMRect>): void {
-    const occupant = cell === null ? -1 : this.s.clueAt(cell);
-    const moved = this.s.move(clue, cell);
+  private moveTo(die: number, cell: number | null, from?: Map<number, DOMRect>): void {
+    const occupant = cell === null ? -1 : this.s.dieAt(cell);
+    const moved = this.s.move(die, cell);
     this.selected = -1;
-    this.sync(from);
-    if (!moved) return;
+    if (!moved) {
+      this.sync(from);
+      return;
+    }
     this.opts.sfx.drop();
-    replay(this.pieces[clue], 'pop');
-    if (occupant >= 0 && occupant !== clue) replay(this.pieces[occupant], 'pop');
+    this.sync(from, true);
+    replay(this.pieces[die], 'pop');
+    if (occupant >= 0 && occupant !== die) replay(this.pieces[occupant], 'pop');
   }
 
   private undo(): void {
     if (!this.s.undo()) return;
     this.selected = -1;
-    this.sync();
+    this.sync(undefined, true);
   }
 
   private restart(): void {
-    if (!this.s.placedCount && !this.s.notes.some(Boolean)) return;
+    if (!this.s.placedCount) return;
     this.s.reset();
     this.selected = -1;
     this.sync();
-    toast('Tabuleiro limpo. Dá para desfazer.');
-  }
-
-  private toggleNotes(): void {
-    this.notesMode = !this.notesMode;
-    this.notesBtn.setAttribute('aria-pressed', String(this.notesMode));
-    if (this.notesMode) toast('Anotação: selecione uma peça e toque nos quadros');
-    this.sync();
-  }
-
-  private showHint(): void {
-    const hint = this.s.hint();
-    if (!hint) {
-      toast('Tudo certo até aqui. Pode verificar!');
-      return;
-    }
-    this.opts.sfx.hint();
-    this.selected = -1;
-    this.sync();
-    replay(this.pieces[hint.clue], 'nudge');
-    this.opts.onHint(hint.lines);
-  }
-
-  private check(): void {
-    const p = this.s.puzzle;
-    if (!this.s.allPlaced) {
-      const missing = p.nClues - this.s.placedCount;
-      toast(`Falta${missing === 1 ? '' : 'm'} ${plural(missing, 'peça', 'peças')} no tabuleiro`);
-      this.opts.sfx.nope();
-      this.pieces.forEach((pc, i) => this.s.placement[i] < 0 && replay(pc, 'nudge'));
-      return;
-    }
-    const result = this.s.check();
-    if (result.solved) {
-      this.celebrate();
-      return;
-    }
-    this.opts.sfx.nope();
-    replay(this.board, 'shake');
-    toast(`${result.correct} de ${result.total} peças no lugar certo`);
+    toast('Vitral limpo. Dá para desfazer.');
   }
 
   private celebrate(): void {
     const p = this.s.puzzle;
-    this.selected = -1;
-    this.sync();
+    this.s.markSolved();
     this.opts.sfx.win();
     this.s.placement.forEach((cell) => {
       const el = this.cells[cell];
@@ -339,16 +361,17 @@ export class LevelView {
       replay(el, 'celebrate');
     });
     const r = this.board.getBoundingClientRect();
-    const glyphs = p.def.clues.map((c) => c.icon).filter((g) => !/\.(svg|png|webp)$/i.test(g));
-    burst(r.left + r.width / 2, r.top + r.height / 2, [...glyphs, '✨', '⭐']);
+    burst(r.left + r.width / 2, r.top + r.height / 2, ['🟥', '🟨', '🟩', '🟦', '🟪', '✨', '⭐']);
     window.setTimeout(() => this.opts.onSolved(), 1150);
   }
 
   // ── rendering ───────────────────────────────────────────────────────────
 
-  /** Reflects session state in the DOM, animating pieces that changed place. */
-  private sync(from?: Map<number, DOMRect>): void {
-    const p = this.s.puzzle;
+  /**
+   * Reflects session state in the DOM, animating dice that changed place.
+   * With `feedback` (a move by the player), rules that just broke or just got satisfied animate and sound.
+   */
+  private sync(from?: Map<number, DOMRect>, feedback = false): void {
     const firsts = this.pieces.map((pc, i) => from?.get(i) ?? pc.getBoundingClientRect());
 
     this.pieces.forEach((pc, i) => {
@@ -359,40 +382,91 @@ export class LevelView {
       pc.classList.toggle('is-selected', this.selected === i);
       this.slots[i].classList.toggle('is-empty', cell >= 0);
     });
-
-    this.cells.forEach((el, cell) => {
-      el.classList.toggle('has-piece', this.s.clueAt(cell) >= 0);
-      el.querySelector('.cell-notes')!.replaceChildren(
-        ...cellsOf(this.s.notes[cell]).map((clue) => icon(p.def.clues[clue].icon, 'note')),
-      );
-    });
-
-    this.badges.forEach((badge, line) => {
-      if (!badge) return;
-      const need = p.lines[line].count ?? 0;
-      const used = this.s.lineUsage(line);
-      badge.textContent = String(need);
-      badge.dataset.state = used === need ? 'ok' : used > need ? 'over' : '';
-    });
-
-    this.board.classList.toggle('is-notes', this.notesMode);
+    this.cells.forEach((el, cell) => el.classList.toggle('has-piece', this.s.dieAt(cell) >= 0));
     this.board.classList.toggle('has-selection', this.selected >= 0);
-    this.trayCount.textContent = `${this.s.placedCount}/${p.nClues}`;
     this.undoBtn.disabled = !this.s.canUndo;
-    this.checkBtn.classList.toggle('is-ready', this.s.allPlaced);
 
+    const verdicts = this.s.verdicts();
+    let newlyBroken = false;
+    let newlyOk = false;
+    verdicts.forEach(({ status }, i) => {
+      const changed = this.statuses[i] !== status;
+      for (const el of this.ruleEls[i]) {
+        el.classList.toggle('is-ok', status === 'ok');
+        el.classList.toggle('is-broken', status === 'broken');
+        el.querySelector('.rule-status')?.replaceChildren(...(STATUS_ICON[status] ? [svg(STATUS_ICON[status])] : []));
+        if (feedback && changed && status !== 'open') replay(el, status === 'broken' ? 'wobble' : 'pop');
+      }
+      if (feedback && changed) {
+        newlyBroken ||= status === 'broken';
+        newlyOk ||= status === 'ok';
+      }
+    });
+    this.statuses = verdicts.map((v) => v.status);
+
+    const conflicts = new Set(verdicts.flatMap((v) => v.cells));
+    this.cells.forEach((el, cell) => el.classList.toggle('is-conflict', conflicts.has(cell)));
+    for (const head of this.heads) {
+      const states = head.rules.map((i) => verdicts[i].status);
+      head.el.classList.toggle('is-ok', states.length > 0 && states.every((st) => st === 'ok'));
+      head.el.classList.toggle('is-broken', states.includes('broken'));
+    }
+
+    const solved = this.s.isSolved(verdicts);
+    const ok = verdicts.filter((v) => v.status === 'ok').length;
+    this.renderSummary(ok, verdicts.length, verdicts.filter((v) => v.status === 'broken').length, solved);
+
+    if (feedback) {
+      if (newlyBroken) this.opts.sfx.nope();
+      else if (newlyOk) this.opts.sfx.ok();
+      if (!solved && this.s.allPlaced) replay(this.board, 'shake');
+    }
+    if (solved && !this.celebrated) {
+      this.celebrated = true;
+      this.selected = -1;
+      this.celebrate();
+    } else if (!solved) {
+      this.celebrated = false;
+    }
+
+    this.trayScroll.classList.toggle('is-scrollable', this.trayScroll.scrollWidth > this.trayScroll.clientWidth + 1);
     this.pieces.forEach((pc, i) => flip(pc, firsts[i]));
   }
 
-  /** Sizes cells to the space available. */
+  private renderSummary(ok: number, total: number, broken: number, solved: boolean): void {
+    const p = this.s.puzzle;
+    const message = solved
+      ? 'Vitral completo!'
+      : broken
+        ? plural(broken, 'regra quebrada', 'regras quebradas')
+        : this.s.placedCount
+          ? 'Nenhuma regra quebrada'
+          : 'Arraste os dados para o vitral';
+    this.summary.className = `summary${broken ? ' is-broken' : ''}${solved ? ' is-solved' : ''}`;
+    this.summary.replaceChildren(
+      h('span', { class: 'summary-count' }, h('b', {}, `${this.s.placedCount}/${p.nCells}`), ' dados'),
+      h('span', { class: 'check-meter', style: `--ratio: ${ok / total}`, title: `${ok} de ${total} regras cumpridas` }),
+      h('span', { class: 'summary-text' }, message),
+    );
+  }
+
+  /** Sizes cells and headers to the space available. */
   private fit(): void {
     const p = this.s.puzzle;
     const { width, height } = this.boardWrap.getBoundingClientRect();
-    const gap = width < 480 ? 6 : 9;
-    const byWidth = (width - gap * p.nCols) / (p.nCols + HEADER_RATIO);
-    const byHeight = (height - gap * p.nRows) / (p.nRows + HEADER_RATIO);
-    const size = Math.max(44, Math.min(150, Math.floor(Math.min(byWidth, byHeight))));
+    const gap = width < 480 ? 5 : 8;
+    const colRules = Math.max(0, ...this.heads.filter((hd) => hd.el.classList.contains('head--col')).map((hd) => hd.rules.length));
+    const headHeight = HEAD_MIN_HEIGHT[Math.min(colRules, 2)];
+    // Cell size along one axis, with the header proportional to the cell but never below its floor.
+    const along = (space: number, n: number, headMin: number) => {
+      const proportional = (space - gap * n) / (n + HEADER_RATIO);
+      return proportional * HEADER_RATIO >= headMin ? proportional : (space - gap * n - headMin) / n;
+    };
+    const size = Math.max(34, Math.min(120, Math.floor(Math.min(along(width, p.nCols, HEAD_MIN_WIDTH), along(height, p.nRows, headHeight)))));
     this.el.style.setProperty('--cell', `${size}px`);
     this.el.style.setProperty('--gap', `${gap}px`);
+    this.el.style.setProperty('--head-w', `${Math.max(size * HEADER_RATIO, HEAD_MIN_WIDTH)}px`);
+    this.el.style.setProperty('--head-h', `${Math.max(size * HEADER_RATIO, headHeight)}px`);
+    this.trayScroll.classList.toggle('is-scrollable', this.trayScroll.scrollWidth > this.trayScroll.clientWidth + 1);
   }
 }

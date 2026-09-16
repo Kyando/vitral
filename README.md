@@ -1,18 +1,16 @@
 <div align="center">
 
-# ✦ Inklink
+# ✦ Vitral
 
-**A cozy word-association logic puzzle.**<br>
-Every clue links two words — find the one place where it truly belongs.
-
-[![Play in your browser](https://img.shields.io/badge/▶_Play_in_your_browser-e0704a?style=for-the-badge)](https://kyando.github.io/inklink/)
+**A cozy stained-glass dice logic puzzle.**<br>
+Place every die in the window without breaking a single rule.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3b2b20?style=flat-square&logo=typescript&logoColor=f5ead6)
 ![Vite](https://img.shields.io/badge/Vite-3b2b20?style=flat-square&logo=vite&logoColor=f5ead6)
 ![No framework](https://img.shields.io/badge/UI-vanilla_DOM-3b2b20?style=flat-square)
 ![Status](https://img.shields.io/badge/status-prototype-e9b949?style=flat-square)
 
-<img src="docs/media/drag-and-drop.gif" alt="Dragging clue pieces onto the board and solving a chapter" width="820">
+<img src="docs/media/drag-and-drop.gif" alt="Dragging dice into the window: a wrong placement breaks a rule, then the board is completed" width="820">
 
 </div>
 
@@ -20,34 +18,35 @@ Every clue links two words — find the one place where it truly belongs.
 
 ## The idea
 
-Inklink turns the table-talk of association games like *Entre-linhas / Between the Lines* into a **solo deduction puzzle**.
+Vitral started as a fork of [Inklink](https://github.com/Kyando/inklink), a word-association puzzle inspired by *Entre-linhas*, *Sudoku*, *Termo* and the *Einstein riddle*. Words are subjective; **dice are not**. So the board keeps the same shape (rules on rows and columns, one piece per cell, a full board), but the pieces become coloured dice, borrowing the window-building of the board game *Sagrada*.
 
-Each panel on the board sits between a **row word** and a **column word**. Your job is to drop every clue piece into the panel where it fits *both*:
+Every level gives you exactly one die per cell and three kinds of rules:
 
-> 🩺 **Doctor** + 🐻 **Bear** → 🐾 **Veterinarian**
-
-Easy — until a 🦛 **Hippo** column shows up and the veterinarian suddenly has two homes. Then the other pieces, and the numbers on the words, have to tell you which one is right. Early chapters are gentle association; later ones become proper *Sudoku / Einstein's riddle* style logic where you test a hypothesis and watch it break.
-
-## Highlights
-
-|  |  |
+| Where | Examples |
 |---|---|
-| 🧩 **Tactile play** | Drag & drop or tap-to-place, with pieces that fly, pop and swap into place |
-| 🧠 **Real deduction** | Every level is machine-verified to have exactly **one** solution reachable by logic — no guessing |
-| 💡 **Hints that teach** | Hints explain the *reasoning* ("if Footprints went here, Meteor would have nowhere to go…") instead of revealing answers |
-| ✏️ **Pencil marks** | Note candidate pieces in panels, Sudoku-style |
-| 📖 **Storybook look** | Paper textures, hand-drawn panels, light & dark themes, fully responsive |
-| 🗂️ **Data-driven levels** | Levels are plain JSON, ready to also feed a printable puzzle-book edition |
+| **Board rules** (under the dice) | neighbouring dice never share a colour · no value repeats in a row or column |
+| **Row / column rules** (headers) | the values add up to 12 · exactly 2 blue dice · no red · only odd values · values increase · all colours different |
+| **Cell restrictions** (Sagrada window) | this cell takes a yellow die · this cell takes a 4 |
+
+## Live validation
+
+There is no *Check* button: the board is validated on every move, and each rule shows its own state.
+
+- **open**: nothing wrong yet;
+- ✅ **satisfied**: its row/column/cell (or the whole board) is complete and correct;
+- ❌ **broken**: the dice already placed make it impossible, whatever goes in the empty cells (a row already above its sum, two red neighbours, a 6 at the start of an increasing row). The dice at fault are outlined in red.
+
+Feedback never peeks at the intended solution or at the dice still in the tray, so it only tells you what you could have worked out yourself. The window is complete when the board is full and every rule is satisfied: *any* arrangement that satisfies the rules wins.
 
 ## Screenshots
 
 <table>
   <tr>
-    <td colspan="2"><img src="docs/media/hero-light.png" alt="Hard chapter in progress with pencil marks and line counts"></td>
+    <td colspan="2"><img src="docs/media/hero-light.png" alt="A 4×4 window in progress with row, column and cell rules"></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/media/dark.png" alt="Dark theme with a selected piece"></td>
-    <td width="50%"><img src="docs/media/hint.png" alt="Hint explaining a chain of deductions"></td>
+    <td width="50%"><img src="docs/media/rules.png" alt="Two swapped dice breaking three rules, with the dice at fault outlined"></td>
+    <td width="50%"><img src="docs/media/dark.png" alt="Dark theme on a 4×5 window"></td>
   </tr>
 </table>
 
@@ -55,92 +54,76 @@ Easy — until a 🦛 **Hippo** column shows up and the veterinarian suddenly ha
   <img src="docs/media/mobile.png" alt="Mobile layout" width="300">
 </p>
 
-## How to play
+## Fair puzzles
 
-1. Each panel sits between the word of its **row** and the word of its **column**.
-2. Place every piece where it fits **both** words. A panel holds **at most one** piece.
-3. Some pieces seem to fit in several places — use the other pieces to rule options out.
-4. A **number** on a word tells how many pieces its row or column receives.
-5. **Check** tells how many pieces are right (not which ones).
+Every level is **generated and machine-verified**:
 
-> The current levels are written in Brazilian Portuguese; the engine is language-agnostic.
+1. A random full board is drawn that respects the chosen board rules.
+2. Every row/column rule that is true for it becomes a candidate (plus cell restrictions).
+3. Rules are added until a **human-style solver** can finish the board, then every rule the solver doesn't need is removed (a few can be kept back to make early chapters gentler).
 
-## Under the hood
+The human-style solver only makes sound eliminations: a die can't go where it already breaks a rule, a cell with one possible die is filled, and a rule's bounds are checked against what the other cells could still receive ("this row needs 15 from two dice, so neither can be below 3"). If it fills the board, the solution is unique **and** reachable by reasoning alone, with no trial and error. Tests also confirm uniqueness with an exhaustive search.
 
-The game is split into a **pure logic core** and thin front-ends, so the same levels can power the web game, a printable book or a future engine port.
-
-```
-src/
-  core/      pure TypeScript, no DOM
-    puzzle.ts    level validation & bitmask indexing
-    solver.ts    exhaustive search (solution counting / uniqueness)
-    deduce.ts    human-style solver: named techniques → difficulty rating & hints
-    explain.ts   natural-language explanation of each deduction
-    analyze.ts   level analysis + solution explorer for authoring
-  game/      session state, undo, persistence, hint selection
-  levels/    *.json levels (ordered by file name)
-  ui/        vanilla DOM + CSS (FLIP animations, pointer-based drag, synth SFX)
-scripts/     authoring & tooling CLIs
-tests/       Vitest suite — every shipped level is proven unique and solvable
-```
-
-### A design finding from the solver
-
-Building the solver surfaced a neat constraint of the core mechanic:
-
-- A **full board** (one piece per panel) always collapses to "this piece only fits here" steps — it can never require hypotheses.
-- **Empty panels without extra info** make a level ambiguous whenever a piece could slide into an empty panel.
-- **Row/column counts** are what create non-local deduction, and with it the "suppose… contradiction!" moments.
-
-The deduction engine rates each level by the hardest technique it needs:
-
-| Rating | Techniques |
-|---|---|
-| Easy | naked singles, full lines |
-| Medium | hidden singles, lines that need exactly the remaining pieces |
-| Hard | hypothesis → contradiction |
+Difficulty comes from board size and how often that deeper "reach" reasoning is needed.
 
 ## Development
 
 ```bash
 npm install
-npm run dev              # play locally
-npm test                 # validate every level + engine tests
-npm run levels           # difficulty report (add -- --steps for the walkthrough)
-npm run levels:explore -- src/levels/06-museu.json   # find unique solutions for a draft level
-npm run media            # regenerate README screenshots & GIF (uses local Edge)
-npm run deploy           # build and publish to GitHub Pages
+npm run dev                          # play locally
+npm test                             # rules, solver agreement, generator and every shipped level
+npm run levels                       # validate levels and print their difficulty (-- --rules to list them)
+npm run levels:generate              # regenerate the chapters from the plan in scripts/generate-levels.ts
+npm run levels:generate -- 3 --dry   # preview one chapter without writing it
+npm run media                        # regenerate README screenshots & GIF (uses local Edge)
+npm run deploy                       # build and publish to GitHub Pages
+```
+
+```
+src/
+  core/      pure TypeScript, no DOM
+    types.ts     level format, dice and rules
+    rules.ts     rule evaluation on partial boards (UI) + compiled incremental checks (solver)
+    solver.ts    exhaustive search (solution counting)
+    deduce.ts    human-style solver → uniqueness proof and difficulty
+    generate.ts  seeded level generator
+    describe.ts  player-facing rule text (pt-BR)
+  game/      session state, undo, persistence
+  levels/    *.json levels (ordered by file name)
+  ui/        vanilla DOM + CSS (FLIP animations, pointer drag, synth SFX)
+scripts/     level generation, reports, media capture, deploy
+tests/       Vitest suite
 ```
 
 ### Level format
 
 ```jsonc
 {
-  "id": "farm",
-  "title": "The Farm",
-  "counts": "cols",                     // none | rows | cols | both
-  "rows": [{ "id": "cow", "label": "Cow", "icon": "🐄" }],
-  "cols": [{ "id": "breakfast", "label": "Breakfast", "icon": "☕" }],
-  "clues": [
-    // every panel where the clue is *plausible*, as "rowId+colId"
-    { "id": "milk", "label": "Milk", "icon": "🥛", "candidates": ["cow+breakfast", "cow+market"] }
+  "id": "capela",
+  "title": "Capela",
+  "rows": 4,
+  "cols": 4,
+  // one die per cell: colour letter (R, Y, G, B, P) + value
+  "dice": ["R2", "R5", "Y1", "B6"],
+  "rules": [
+    { "type": "adjacent-colors-differ" },
+    { "type": "sum", "line": "row", "index": 0, "value": 14 },
+    { "type": "color-count", "line": "col", "index": 2, "color": "red", "count": 0 },
+    { "type": "cell-color", "row": 1, "col": 3, "color": "blue" }
   ],
-  "solution": { "milk": "cow+breakfast" }
+  // die codes in reading order
+  "solution": ["B5", "Y5", "R2", "P2"]
 }
 ```
 
-`icon` accepts an emoji or an image path under `public/` (e.g. `assets/milk.svg`).
-
-**Authoring flow:** write words and generous candidates → run `levels:explore` to get the solutions and count modes that make the level unique (hardest first) → paste `counts` + `solution` → `npm test`.
-
 ## Roadmap
 
-- [ ] Printable puzzle-book (PDF) export from the same level files, with self-check codes
-- [ ] In-browser level editor with live uniqueness & difficulty feedback
-- [ ] Custom illustrated assets replacing emoji
-- [ ] More chapters and an English level pack
-- [ ] Playtest telemetry to calibrate ambiguous associations
+- [ ] More rule types (sum parity, "at least one", diagonals, min/max)
+- [ ] Colour-blind mode with a symbol per colour
+- [ ] A lab page to tweak the generator plan and playtest boards
+- [ ] Daily puzzle with a shareable result
+- [ ] Printable puzzle-book edition from the same level files
 
 ## Credits
 
-Designed and developed by **Bruno Ribeiro**. Inspired by the association board game *Entre-linhas*.
+Designed and developed by **Bruno Ribeiro**. Inspired by *Sagrada*, *Entre-linhas*, *Sudoku*, *Termo* and the Einstein riddle.
