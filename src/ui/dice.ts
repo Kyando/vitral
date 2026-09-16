@@ -102,7 +102,7 @@ const text = (x: number, content: string, size: number) =>
 
 /** A die of side `s` centered at (cx, MID): filled with its color, pips for its number. */
 function dieMark(cx: number, s: number, color?: Color, value?: number): string {
-  const fill = color ? `style="fill: var(--die-${color})"` : 'style="fill: var(--panel)"';
+  const fill = color ? `style="fill: var(--die-${color})"` : 'style="fill: var(--clear)"';
   let out = `<rect x="${cx - s / 2}" y="${MID - s / 2}" width="${s}" height="${s}" rx="${s * 0.24}" ${fill} ${STROKE}/>`;
   if (value) {
     const pip = color === 'yellow' || !color ? 'currentColor' : '#fffaf1';

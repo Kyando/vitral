@@ -26,6 +26,9 @@
   --die-purple: #8c58bb;
   --pip-light: #fffaf1;
   --pip-dark: #3b2b20;
+  /* Clear glass: uncolored panes, and the color of "any" in rule symbols */
+  --clear: #dfe3d6;
+  --clear-edge: #c9cfbf;
 
   --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
   --font-body: 'Nunito', ui-rounded, system-ui, 'Segoe UI', sans-serif;
@@ -61,6 +64,8 @@
     --die-blue: #4f8ce0;
     --die-purple: #a06fd0;
     --pip-dark: #221c16;
+    --clear: #434a48;
+    --clear-edge: #56605c;
     color-scheme: dark;
   }
 }
@@ -88,6 +93,8 @@
   --die-blue: #4f8ce0;
   --die-purple: #a06fd0;
   --pip-dark: #221c16;
+  --clear: #434a48;
+  --clear-edge: #56605c;
   color-scheme: dark;
 }
 
@@ -497,13 +504,13 @@ button {
 /* ── Cells ──────────────────────────────────────────────────────────────── */
 
 .cell {
-  --glass: var(--panel);
+  --glass: var(--clear);
   position: relative;
   background: var(--glass);
   border: 3px solid var(--stroke);
   box-shadow:
     inset 0 0 0 4px var(--glass),
-    inset 0 0 0 5.5px var(--faint),
+    inset 0 0 0 5.5px var(--clear-edge),
     0 4px 0 var(--stroke);
   cursor: pointer;
   transition: background 0.15s, transform 0.15s, border-color 0.15s;
@@ -519,7 +526,7 @@ button {
 .cell[data-req-color='purple'] { --c: var(--die-purple); }
 
 .cell[data-req-color] {
-  --glass: color-mix(in srgb, var(--c) 34%, var(--panel));
+  --glass: color-mix(in srgb, var(--c) 38%, var(--clear));
   background-image: repeating-linear-gradient(-45deg, transparent 0 10px, rgb(255 255 255 / 0.14) 10px 14px);
 }
 
@@ -532,21 +539,21 @@ button {
 
 .cell.is-hover,
 .cell.is-focus {
-  --glass: var(--hover);
+  --glass: color-mix(in srgb, var(--select) 30%, var(--clear));
 }
 
 .cell[data-req-color].is-hover,
 .cell[data-req-color].is-focus {
-  --glass: color-mix(in srgb, var(--c) 50%, var(--panel));
+  --glass: color-mix(in srgb, var(--c) 52%, var(--clear));
 }
 
 @media (hover: hover) {
   .cell:hover {
-    --glass: var(--hover);
+    --glass: color-mix(in srgb, var(--select) 30%, var(--clear));
   }
 
   .cell[data-req-color]:hover {
-    --glass: color-mix(in srgb, var(--c) 50%, var(--panel));
+    --glass: color-mix(in srgb, var(--c) 52%, var(--clear));
   }
 }
 
