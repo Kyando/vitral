@@ -40,7 +40,7 @@ export const LESSONS: Partial<Record<RuleType, Lesson>> = {
   },
   sum: {
     title: 'Soma',
-    text: 'Dado vazio com =12: os números da linha ou coluna somam 12. O número no canto mostra quanto a linha soma até agora.',
+    text: 'Dado vazio com =12: os números da linha ou coluna somam 12. O número dentro do dado mostra quanto a linha soma até agora.',
     examples: [{ glyph: { number: 'any', op: 'total', n: 12 }, caption: 'os números somam 12' }],
   },
   'values-unique': {

@@ -148,6 +148,8 @@ export function glyphMarkup(g: GlyphSpec): string {
     x += 1;
   } else {
     out += dieMark(x + 14, 26, specificColor, specificNumber);
+    // The empty die of a sum holds the line's running total (filled in by the board view).
+    if (g.op === 'total') out += `<text class="sum-now" x="${x + 14}" y="${MID + 5.6}" text-anchor="middle" font-size="16" font-weight="900"></text>`;
     x += 31;
   }
 

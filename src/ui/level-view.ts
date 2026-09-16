@@ -40,7 +40,7 @@ export class LevelView {
   /** Row/column headers and the rules they hold. */
   private readonly heads: { el: HTMLElement; rules: number[] }[] = [];
   /** Running totals shown on sum badges: the counter and the cells it adds up. */
-  private readonly sums: { el: HTMLElement; cells: number[] }[] = [];
+  private readonly sums: { el: SVGTextElement; cells: number[] }[] = [];
   private readonly undoBtn: HTMLButtonElement;
   private readonly summary: HTMLElement;
   private readonly trayScroll: HTMLElement;
@@ -173,11 +173,8 @@ export class LevelView {
     const cells = lineCells(p, { line, index });
     for (const i of rules) {
       const badge = ruleBadge(p.rules[i]);
-      if (p.rules[i].type === 'sum') {
-        const counter = h('span', { class: 'sum-now', 'aria-hidden': 'true' });
-        this.sums.push({ el: counter, cells });
-        badge.append(counter);
-      }
+      const counter = badge.querySelector<SVGTextElement>('.sum-now');
+      if (counter) this.sums.push({ el: counter, cells });
       this.ruleEls[i].push(badge);
       el.append(badge);
     }
@@ -422,7 +419,6 @@ export class LevelView {
     for (const { el, cells } of this.sums) {
       const dice = cells.flatMap((cell) => (grid[cell] ? [grid[cell]!.value] : []));
       el.textContent = dice.length ? String(dice.reduce((a, b) => a + b, 0)) : '';
-      el.classList.toggle('is-shown', dice.length > 0);
     }
 
     const solved = this.s.isSolved(verdicts);
